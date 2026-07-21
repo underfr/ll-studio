@@ -1,0 +1,6 @@
+.env
+.env.local
+.env.test
+.env.dev
+
+/node_modules
