@@ -4,3 +4,9 @@
 .env.dev
 
 /node_modules
+# IDE
+/.idea/
+/.vscode/
+
+# macOS
+.DS_Store

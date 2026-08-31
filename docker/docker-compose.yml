@@ -1,2 +1,102 @@
+name: ll-studio
+
 services:
-  
+  # Base de données MySQL
+  database:
+    image: mysql:8.4
+    container_name: llstudio-database
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-llstudio}
+      MYSQL_USER: ${MYSQL_USER:-llstudio}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-llstudio}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - database_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root",
+         "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks:
+      - llstudio
+
+  # API Symfony / API Platform (PHP-FPM)
+  php:
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    container_name: llstudio-php
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      APP_DEBUG: ${APP_DEBUG:-1}
+      DATABASE_URL: "mysql://${MYSQL_USER:-llstudio}:${MYSQL_PASSWORD:-llstudio}@database:3306/${MYSQL_DATABASE:-llstudio}?serverVersion=8.4.0-mysql&charset=utf8mb4"
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$}
+    volumes:
+      - ../backend:/app
+      - backend_var:/app/var
+      - backend_vendor:/app/vendor
+    networks:
+      - llstudio
+
+  # Serveur web devant PHP-FPM
+  nginx:
+    image: nginx:1.29-alpine
+    container_name: llstudio-nginx
+    restart: unless-stopped
+    depends_on:
+      - php
+    ports:
+      - "${API_PORT:-8000}:80"
+    volumes:
+      - ../backend:/app:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - llstudio
+
+  # Front Nuxt 4
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/node/Dockerfile
+      target: dev
+    container_name: llstudio-frontend
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      # URL de l'API vue depuis le navigateur de l'utilisateur
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8000}
+      # URL de l'API vue depuis le serveur Nuxt (SSR), via le réseau Docker
+      NUXT_API_BASE_SERVER: ${NUXT_API_BASE_SERVER:-http://nginx}
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    volumes:
+      - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_nuxt:/app/.nuxt
+    networks:
+      - llstudio
+
+volumes:
+  database_data:
+  backend_var:
+  backend_vendor:
+  frontend_node_modules:
+  frontend_nuxt:
+
+networks:
+  llstudio:
+    driver: bridge
