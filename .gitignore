@@ -1,8 +1,9 @@
-# Surcharges locales de configuration.
-# Les fichiers .env versionnés (backend/.env, *.env.example) ne contiennent
-# que des valeurs de développement, jamais de secret de production.
+# Aucun fichier .env effectif n'est versionné : le dépôt ne contient que des
+# modèles (*.env.example), dont l'entrypoint et l'utilisateur dérivent les
+# fichiers réels. Les secrets ne peuvent donc pas partir dans un commit.
 .env.local
 .env.*.local
+/backend/.env
 /docker/.env
 
 # Dépendances et artefacts de build (voir aussi backend/.gitignore
