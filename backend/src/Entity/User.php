@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -30,11 +31,17 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Comptes du back-office.',
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(),
-        new Patch(),
-        new Delete(),
+        new GetCollection(openapi: new OpenApiOperation(summary: 'Lister les comptes')),
+        new Get(openapi: new OpenApiOperation(summary: 'Consulter un compte')),
+        new Post(
+            openapi: new OpenApiOperation(
+                summary: 'Créer un compte',
+                description: "Le mot de passe n'appartient à aucun groupe de sérialisation : il ne peut être ni lu ni "
+                    ."écrit par l'API tant que le processor de hachage de l'issue #10 n'est pas en place.",
+            ),
+        ),
+        new Patch(openapi: new OpenApiOperation(summary: 'Modifier un compte')),
+        new Delete(openapi: new OpenApiOperation(summary: 'Supprimer un compte')),
     ],
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:write']],

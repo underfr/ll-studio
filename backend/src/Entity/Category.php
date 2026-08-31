@@ -7,12 +7,14 @@ namespace App\Entity;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -28,11 +30,22 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Catégories thématiques utilisées pour classer les photos et les albums.',
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(),
-        new Patch(),
-        new Delete(),
+        new GetCollection(
+            openapi: new OpenApiOperation(
+                summary: 'Lister les catégories',
+                description: "Collection volontairement non paginée : elle alimente les filtres de la galerie et les menus "
+                    ."déroulants du back-office. Triée par nom croissant, avec le nombre de photos rattachées.",
+            ),
+        ),
+        new Get(openapi: new OpenApiOperation(summary: 'Consulter une catégorie')),
+        new Post(openapi: new OpenApiOperation(summary: 'Créer une catégorie')),
+        new Patch(openapi: new OpenApiOperation(summary: 'Renommer une catégorie')),
+        new Delete(
+            openapi: new OpenApiOperation(
+                summary: 'Supprimer une catégorie',
+                description: "Échoue si des photos ou des albums y sont encore rattachés (contrainte ON DELETE RESTRICT).",
+            ),
+        ),
     ],
     normalizationContext: ['groups' => ['category:read']],
     denormalizationContext: ['groups' => ['category:write']],
@@ -56,6 +69,7 @@ class Category
     #[ORM\Column(length: 50, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
+    #[ApiProperty(description: 'Nom affiché de la catégorie.', example: 'Spectacle')]
     #[Groups(['category:read', 'category:write', 'photo:read', 'album:read'])]
     private string $name = '';
 
@@ -66,6 +80,7 @@ class Category
     #[Assert\NotBlank]
     #[Assert\Length(max: 60)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Le slug ne peut contenir que des minuscules, des chiffres et des tirets.')]
+    #[ApiProperty(description: 'Identifiant lisible utilisé comme valeur de filtre (?category.slug=).', example: 'spectacle')]
     #[Groups(['category:read', 'category:write', 'photo:read', 'album:read'])]
     private string $slug = '';
 

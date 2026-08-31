@@ -8,12 +8,14 @@ use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -30,14 +32,39 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Séries photographiques regroupant plusieurs photos.',
     operations: [
-        // La collection reste légère : pas de liste de photos, seulement
-        // la photo de couverture et le compteur.
-        new GetCollection(),
-        // La vue détaillée embarque les photos de la série.
-        new Get(normalizationContext: ['groups' => ['album:read', 'album:item:read']]),
-        new Post(),
-        new Patch(),
-        new Delete(),
+        new GetCollection(
+            openapi: new OpenApiOperation(
+                summary: 'Lister les séries',
+                description: "Collection paginée (12 éléments par défaut), triée de la plus récente à la plus ancienne.\n\n"
+                    ."Chaque série est renvoyée sans sa liste de photos : seuls la couverture (`coverPhoto`) et le compteur "
+                    ."(`photoCount`) sont exposés, ce qui suffit à la grille de la page Galerie.",
+            ),
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['album:read', 'album:item:read']],
+            openapi: new OpenApiOperation(
+                summary: 'Consulter une série',
+                description: "Embarque cette fois la liste complète des photos de la série, dans l'ordre d'ajout.",
+            ),
+        ),
+        new Post(
+            openapi: new OpenApiOperation(
+                summary: 'Créer une série',
+                description: "Réservé au back-office. `photos` accepte un tableau d'IRI de photos existantes.",
+            ),
+        ),
+        new Patch(
+            openapi: new OpenApiOperation(
+                summary: 'Modifier une série',
+                description: "Mise à jour partielle. Transmettre `photos` remplace intégralement la composition de la série.",
+            ),
+        ),
+        new Delete(
+            openapi: new OpenApiOperation(
+                summary: 'Supprimer une série',
+                description: 'Les photos ne sont pas supprimées : seules les liaisons de la série le sont.',
+            ),
+        ),
     ],
     normalizationContext: ['groups' => ['album:read']],
     denormalizationContext: ['groups' => ['album:write']],
@@ -78,6 +105,7 @@ class Album
     #[Assert\NotBlank]
     #[Assert\Length(max: 140)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Le slug ne peut contenir que des minuscules, des chiffres et des tirets.')]
+    #[ApiProperty(description: "Identifiant lisible utilisé dans l'URL publique de la série.", example: 'puy-du-fou-2024')]
     #[Groups(['album:read', 'album:write'])]
     private string $slug = '';
 
@@ -114,6 +142,7 @@ class Album
      */
     #[ORM\ManyToOne(targetEntity: Photo::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[ApiProperty(description: "Photo affichée en bandeau. Si elle est absente, le front retombe sur la première photo de la série.")]
     #[Groups(['album:read', 'album:write'])]
     private ?Photo $coverPhoto = null;
 
@@ -124,6 +153,7 @@ class Album
     #[ORM\JoinTable(name: 'album_photo')]
     #[ORM\JoinColumn(name: 'album_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     #[ORM\InverseJoinColumn(name: 'photo_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ApiProperty(description: "Photos de la série. En écriture, transmettre un tableau d'IRI ; le tableau remplace la composition existante.")]
     #[Groups(['album:item:read', 'album:write'])]
     private Collection $photos;
 

@@ -1,6 +1,19 @@
 api_platform:
-    title: Hello API Platform
-    version: 1.0.0
+    title: 'LL Studio — API'
+    description: |
+        API REST du portfolio photographique **LL Studio**.
+
+        Elle expose les photographies, les séries (albums) et leurs catégories,
+        ainsi que la boîte de réception du formulaire de contact.
+
+        Toutes les collections sont paginées (20 éléments par défaut, 60 au
+        maximum via `?itemsPerPage=`) et acceptent des filtres de recherche,
+        de tri et de date documentés opération par opération.
+
+        Les réponses sont sérialisées en JSON-LD (Hydra) par défaut ; le
+        format JSON simple est disponible via l'en-tête `Accept: application/json`.
+    version: '1.0.0'
+
     defaults:
         stateless: true
         cache_headers:
@@ -9,8 +22,22 @@ api_platform:
         # Pagination (issue #7)
         pagination_enabled: true
         pagination_items_per_page: 20
-        # Le client peut demander une autre taille de page via ?itemsPerPage=…
+        # Le client peut ajuster la taille de page via ?itemsPerPage=…
         pagination_client_items_per_page: true
         pagination_maximum_items_per_page: 60
         # …mais il ne peut pas désactiver la pagination entièrement.
         pagination_client_enabled: false
+
+    openapi:
+        contact:
+            name: 'Loïck Laurent'
+            url: 'https://ll-studio.fr'
+            email: 'contact@ll-studio.fr'
+        license:
+            name: 'Propriétaire — tous droits réservés'
+        swagger_ui_extra_configuration:
+            # Les opérations sont repliées à l'ouverture : la page reste lisible.
+            docExpansion: list
+            # Champ de recherche au-dessus de la liste des opérations.
+            filter: true
+            persistAuthorization: true
