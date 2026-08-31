@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -25,12 +26,17 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Séries photographiques regroupant plusieurs photos.',
     operations: [
+        // La collection reste légère : pas de liste de photos, seulement
+        // la photo de couverture et le compteur.
         new GetCollection(),
-        new Get(),
+        // La vue détaillée embarque les photos de la série.
+        new Get(normalizationContext: ['groups' => ['album:read', 'album:item:read']]),
         new Post(),
         new Patch(),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['album:read']],
+    denormalizationContext: ['groups' => ['album:write']],
 )]
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 #[ORM\Table(name: 'album')]
@@ -42,11 +48,13 @@ class Album
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['album:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 120)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 120)]
+    #[Groups(['album:read', 'album:write'])]
     private string $title = '';
 
     /**
@@ -56,27 +64,34 @@ class Album
     #[Assert\NotBlank]
     #[Assert\Length(max: 140)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Le slug ne peut contenir que des minuscules, des chiffres et des tirets.')]
+    #[Groups(['album:read', 'album:write'])]
     private string $slug = '';
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['album:read', 'album:write'])]
     private ?string $description = null;
 
     #[ORM\Column]
+    #[Groups(['album:read', 'album:write'])]
     private bool $visible = true;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['album:read'])]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['album:item:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'albums')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
     #[Assert\NotNull(message: 'Un album doit appartenir à une catégorie.')]
+    #[Groups(['album:read', 'album:write'])]
     private ?Category $category = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'albums')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['album:item:read'])]
     private ?User $owner = null;
 
     /**
@@ -85,6 +100,7 @@ class Album
      */
     #[ORM\ManyToOne(targetEntity: Photo::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['album:read', 'album:write'])]
     private ?Photo $coverPhoto = null;
 
     /**
@@ -94,6 +110,7 @@ class Album
     #[ORM\JoinTable(name: 'album_photo')]
     #[ORM\JoinColumn(name: 'album_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     #[ORM\InverseJoinColumn(name: 'photo_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[Groups(['album:item:read', 'album:write'])]
     private Collection $photos;
 
     public function __construct()
@@ -217,6 +234,7 @@ class Album
     /**
      * Nombre de photos affiché sous le titre de l'album (« 24 photos »).
      */
+    #[Groups(['album:read'])]
     public function getPhotoCount(): int
     {
         return $this->photos->count();

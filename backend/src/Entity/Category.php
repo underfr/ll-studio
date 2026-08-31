@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -30,6 +31,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Patch(),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['category:read']],
+    denormalizationContext: ['groups' => ['category:write']],
 )]
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ORM\Table(name: 'category')]
@@ -40,11 +43,13 @@ class Category
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['category:read', 'photo:read', 'album:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
+    #[Groups(['category:read', 'category:write', 'photo:read', 'album:read'])]
     private string $name = '';
 
     /**
@@ -54,6 +59,7 @@ class Category
     #[Assert\NotBlank]
     #[Assert\Length(max: 60)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Le slug ne peut contenir que des minuscules, des chiffres et des tirets.')]
+    #[Groups(['category:read', 'category:write', 'photo:read', 'album:read'])]
     private string $slug = '';
 
     /**
@@ -106,6 +112,7 @@ class Category
     /**
      * Compteur affiché dans le back-office (« Nature · 51 photos »).
      */
+    #[Groups(['category:read'])]
     public function getPhotoCount(): int
     {
         return $this->photos->count();

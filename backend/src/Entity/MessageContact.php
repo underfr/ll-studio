@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\MessageContactRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -27,9 +28,12 @@ use Symfony\Component\Validator\Constraints as Assert;
         // Réservées au back-office (sécurisation à l'issue #13).
         new GetCollection(),
         new Get(),
-        new Patch(),
+        // Le back-office ne modifie qu'un seul champ : le marqueur « lu ».
+        new Patch(denormalizationContext: ['groups' => ['message:update']]),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['message:read']],
+    denormalizationContext: ['groups' => ['message:write']],
 )]
 #[ORM\Entity(repositoryClass: MessageContactRepository::class)]
 #[ORM\Table(name: 'message_contact')]
@@ -39,36 +43,43 @@ class MessageContact
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['message:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Merci d’indiquer votre nom.')]
     #[Assert\Length(max: 100)]
+    #[Groups(['message:read', 'message:write'])]
     private string $name = '';
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank(message: 'Merci d’indiquer votre adresse e-mail.')]
     #[Assert\Email(message: 'Cette adresse e-mail n’est pas valide.')]
     #[Assert\Length(max: 180)]
+    #[Groups(['message:read', 'message:write'])]
     private string $email = '';
 
     #[ORM\Column(length: 150)]
     #[Assert\NotBlank(message: 'Merci d’indiquer un sujet.')]
     #[Assert\Length(max: 150)]
+    #[Groups(['message:read', 'message:write'])]
     private string $subject = '';
 
     #[ORM\Column(type: 'text')]
     #[Assert\NotBlank(message: 'Le message ne peut pas être vide.')]
     #[Assert\Length(min: 10, max: 5000)]
+    #[Groups(['message:read', 'message:write'])]
     private string $message = '';
 
     /**
      * Alimente le compteur « 2 non lus » du tableau de bord.
      */
     #[ORM\Column(name: 'is_read')]
+    #[Groups(['message:read', 'message:update'])]
     private bool $read = false;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['message:read'])]
     private \DateTimeImmutable $createdAt;
 
     public function __construct()
