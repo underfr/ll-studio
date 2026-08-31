@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Factory;
 
 use App\Entity\User;
+use App\Security\Role;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
@@ -35,14 +36,14 @@ final class UserFactory extends PersistentObjectFactory
             'email' => self::faker()->unique()->safeEmail(),
             'firstName' => self::faker()->firstName(),
             'lastName' => self::faker()->lastName(),
-            'roles' => ['ROLE_USER'],
+            'roles' => [],
             'password' => 'password',
         ];
     }
 
     public function admin(): static
     {
-        return $this->with(['roles' => ['ROLE_ADMIN']]);
+        return $this->with(['roles' => [Role::ADMIN->value]]);
     }
 
     #[\Override]

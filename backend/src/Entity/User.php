@@ -15,6 +15,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Security\Role;
 use App\State\UserPasswordHasherProcessor;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -78,8 +79,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $email = '';
 
     /**
+     * Rôles explicitement accordés au compte. ROLE_USER est ajouté à la
+     * volée par getRoles() et n'a donc pas à figurer ici.
+     *
      * @var list<string>
      */
+    #[ApiProperty(
+        description: 'Rôles accordés au compte. ROLE_USER est implicite.',
+        example: ['ROLE_ADMIN'],
+    )]
+    #[Assert\All([
+        new Assert\Choice(callback: [Role::class, 'values'], message: 'Le rôle « {{ value }} » n’existe pas.'),
+    ])]
+    #[Assert\Unique(message: 'Ce rôle est présent plusieurs fois.')]
     #[ORM\Column]
     #[Groups(['user:read', 'user:write'])]
     private array $roles = [];
@@ -168,7 +180,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
         // Tout utilisateur authentifié possède au minimum ROLE_USER.
-        $roles[] = 'ROLE_USER';
+        $roles[] = Role::USER->value;
 
         return array_values(array_unique($roles));
     }
@@ -237,6 +249,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->lastName = $lastName;
 
         return $this;
+    }
+
+    public function isAdmin(): bool
+    {
+        return \in_array(Role::ADMIN->value, $this->getRoles(), true);
     }
 
     #[Groups(['user:read'])]
