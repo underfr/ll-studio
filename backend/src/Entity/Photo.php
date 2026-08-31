@@ -32,6 +32,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'Photographies de la galerie.',
     operations: [
         new GetCollection(
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Lister les photographies',
                 description: "Collection paginée (24 éléments par défaut), triée de la plus récente à la plus ancienne.\n\n"
@@ -41,24 +42,28 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             normalizationContext: ['groups' => ['photo:read', 'photo:item:read']],
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Consulter une photographie',
                 description: "Ajoute à la vue liste la date de dernière modification, l'auteur et les albums dans lesquels la photo apparaît.",
             ),
         ),
         new Post(
+            security: "is_granted('ROLE_ADMIN')",
             openapi: new OpenApiOperation(
                 summary: 'Ajouter une photographie',
                 description: "Réservé au back-office. Cette opération enregistre les métadonnées ; l'envoi du fichier disposera de son propre endpoint sécurisé (issue #16).",
             ),
         ),
         new Patch(
+            security: "is_granted('CONTENT_EDIT', object)",
             openapi: new OpenApiOperation(
                 summary: 'Modifier une photographie',
                 description: 'Mise à jour partielle : seuls les champs transmis sont modifiés.',
             ),
         ),
         new Delete(
+            security: "is_granted('CONTENT_DELETE', object)",
             openapi: new OpenApiOperation(summary: 'Supprimer une photographie'),
         ),
     ],

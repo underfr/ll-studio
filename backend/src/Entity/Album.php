@@ -33,6 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'Séries photographiques regroupant plusieurs photos.',
     operations: [
         new GetCollection(
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Lister les séries',
                 description: "Collection paginée (12 éléments par défaut), triée de la plus récente à la plus ancienne.\n\n"
@@ -42,24 +43,28 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             normalizationContext: ['groups' => ['album:read', 'album:item:read']],
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Consulter une série',
                 description: "Embarque cette fois la liste complète des photos de la série, dans l'ordre d'ajout.",
             ),
         ),
         new Post(
+            security: "is_granted('ROLE_ADMIN')",
             openapi: new OpenApiOperation(
                 summary: 'Créer une série',
                 description: "Réservé au back-office. `photos` accepte un tableau d'IRI de photos existantes.",
             ),
         ),
         new Patch(
+            security: "is_granted('CONTENT_EDIT', object)",
             openapi: new OpenApiOperation(
                 summary: 'Modifier une série',
                 description: "Mise à jour partielle. Transmettre `photos` remplace intégralement la composition de la série.",
             ),
         ),
         new Delete(
+            security: "is_granted('CONTENT_DELETE', object)",
             openapi: new OpenApiOperation(
                 summary: 'Supprimer une série',
                 description: 'Les photos ne sont pas supprimées : seules les liaisons de la série le sont.',
