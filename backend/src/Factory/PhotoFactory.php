@@ -25,7 +25,7 @@ final class PhotoFactory extends PersistentObjectFactory
             'title' => self::faker()->unique()->sentence(4),
             'description' => self::faker()->paragraph(),
             'alt' => self::faker()->sentence(10),
-            'filePath' => 'uploads/photos/'.self::faker()->unique()->slug(3).'.jpg',
+            'filePath' => self::faker()->unique()->slug(3).'.jpg',
             'visible' => true,
             'createdAt' => \DateTimeImmutable::createFromMutable(
                 self::faker()->dateTimeBetween('-2 years', 'now')

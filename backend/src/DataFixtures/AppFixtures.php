@@ -25,8 +25,9 @@ use Symfony\Component\Filesystem\Filesystem;
  * dans des conditions réalistes.
  *
  * Les fichiers images sont versionnés dans backend/fixtures/photos/ et copiés
- * vers public/uploads/photos/ au chargement — public/uploads/ reste hors du
- * dépôt puisqu'il accueillera aussi les envois du back-office (issue #14).
+ * vers public/uploads/photos/ au chargement, c'est-à-dire le dossier du
+ * mapping VichUploader « photo_image ». La colonne filePath ne contient donc
+ * que le nom du fichier ; l'URL publique est calculée à la sérialisation.
  */
 final class AppFixtures extends Fixture
 {
@@ -65,7 +66,7 @@ final class AppFixtures extends Fixture
                 'title' => $data['title'],
                 'description' => $data['description'],
                 'alt' => $data['alt'],
-                'filePath' => \sprintf('uploads/photos/img%02d.jpg', $index),
+                'filePath' => \sprintf('img%02d.jpg', $index),
                 // Une photo reste masquée : elle sert à vérifier que le site
                 // public ne la voit pas, même en devinant son identifiant.
                 'visible' => self::HIDDEN_PHOTO !== $index,
