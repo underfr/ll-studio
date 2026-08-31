@@ -1,0 +1,136 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+use App\Repository\MessageContactRepository;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * Message envoyé depuis le formulaire de contact public, consulté depuis
+ * l'écran « Messages » du back-office.
+ */
+#[ORM\Entity(repositoryClass: MessageContactRepository::class)]
+#[ORM\Table(name: 'message_contact')]
+#[ORM\Index(name: 'idx_message_read_created', columns: ['is_read', 'created_at'])]
+class MessageContact
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Merci d’indiquer votre nom.')]
+    #[Assert\Length(max: 100)]
+    private string $name = '';
+
+    #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: 'Merci d’indiquer votre adresse e-mail.')]
+    #[Assert\Email(message: 'Cette adresse e-mail n’est pas valide.')]
+    #[Assert\Length(max: 180)]
+    private string $email = '';
+
+    #[ORM\Column(length: 150)]
+    #[Assert\NotBlank(message: 'Merci d’indiquer un sujet.')]
+    #[Assert\Length(max: 150)]
+    private string $subject = '';
+
+    #[ORM\Column(type: 'text')]
+    #[Assert\NotBlank(message: 'Le message ne peut pas être vide.')]
+    #[Assert\Length(min: 10, max: 5000)]
+    private string $message = '';
+
+    /**
+     * Alimente le compteur « 2 non lus » du tableau de bord.
+     */
+    #[ORM\Column(name: 'is_read')]
+    private bool $read = false;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $createdAt;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getSubject(): string
+    {
+        return $this->subject;
+    }
+
+    public function setSubject(string $subject): static
+    {
+        $this->subject = $subject;
+
+        return $this;
+    }
+
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+
+    public function setMessage(string $message): static
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    public function isRead(): bool
+    {
+        return $this->read;
+    }
+
+    public function setRead(bool $read): static
+    {
+        $this->read = $read;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+}
