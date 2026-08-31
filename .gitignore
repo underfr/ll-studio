@@ -1,9 +1,19 @@
-.env
+# Surcharges locales de configuration.
+# Les fichiers .env versionnés (backend/.env, *.env.example) ne contiennent
+# que des valeurs de développement, jamais de secret de production.
 .env.local
-.env.test
-.env.dev
+.env.*.local
+/docker/.env
 
-/node_modules
+# Dépendances et artefacts de build (voir aussi backend/.gitignore
+# et frontend/.gitignore)
+/backend/vendor/
+/backend/var/
+/frontend/node_modules/
+/frontend/.nuxt/
+/frontend/.pnpm-store/
+/frontend/.output/
+
 # IDE
 /.idea/
 /.vscode/
