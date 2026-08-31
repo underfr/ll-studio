@@ -1,0 +1,26 @@
+# Le contexte de build est la racine du dépôt : on n'y envoie que le
+# strict nécessaire pour garder les builds rapides et reproductibles.
+.git
+.gitignore
+.idea
+.vscode
+**/.DS_Store
+README.md
+
+docker/.env
+
+backend/var
+backend/vendor
+backend/.env.local
+backend/.env.*.local
+backend/public/bundles
+backend/public/assets
+
+frontend/node_modules
+frontend/.nuxt
+frontend/.pnpm-store
+frontend/.output
+frontend/.data
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
