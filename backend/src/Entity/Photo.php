@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -24,11 +25,14 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'Photographies de la galerie.',
     operations: [
         new GetCollection(),
-        new Get(),
+        // La vue détaillée ajoute updatedAt, l'auteur et les albums associés.
+        new Get(normalizationContext: ['groups' => ['photo:read', 'photo:item:read']]),
         new Post(),
         new Patch(),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['photo:read']],
+    denormalizationContext: ['groups' => ['photo:write']],
 )]
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
 #[ORM\Table(name: 'photo')]
@@ -39,14 +43,17 @@ class Photo
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['photo:read', 'album:read', 'album:item:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 120)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 120)]
+    #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $title = '';
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['photo:read', 'photo:write', 'album:item:read'])]
     private ?string $description = null;
 
     /**
@@ -54,6 +61,7 @@ class Photo
      */
     #[ORM\Column(type: 'text')]
     #[Assert\NotBlank(message: "Le texte alternatif est obligatoire pour l'accessibilité.")]
+    #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $alt = '';
 
     /**
@@ -62,33 +70,40 @@ class Photo
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $filePath = '';
 
     /**
      * Une photo masquée reste en base mais disparaît du site public.
      */
     #[ORM\Column]
+    #[Groups(['photo:read', 'photo:write'])]
     private bool $visible = true;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['photo:read', 'album:item:read'])]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['photo:item:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'photos')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
     #[Assert\NotNull(message: 'Une photo doit appartenir à une catégorie.')]
+    #[Groups(['photo:read', 'photo:write'])]
     private ?Category $category = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'photos')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['photo:item:read'])]
     private ?User $owner = null;
 
     /**
      * @var Collection<int, Album>
      */
     #[ORM\ManyToMany(targetEntity: Album::class, mappedBy: 'photos')]
+    #[Groups(['photo:item:read'])]
     private Collection $albums;
 
     public function __construct()
