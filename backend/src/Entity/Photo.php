@@ -133,9 +133,36 @@ class Photo
 
     /**
      * Fichier envoyé. Il n'est pas persisté : VichUploader l'écrit sur le
-     * disque et renseigne $filePath. Les contraintes de validation du
-     * fichier arrivent à l'issue #15.
+     * disque et renseigne $filePath.
+     *
+     * Les contraintes ci-dessous sont la dernière barrière avant l'écriture
+     * sur le disque : le contrôle côté client est une commodité, pas une
+     * sécurité, et un appel direct à l'API le contourne.
      */
+    #[Assert\Image(
+        // Plafond volontairement sous les limites de PHP (upload_max_filesize
+        // 12M) et de Nginx (client_max_body_size 16m), pour que le dépassement
+        // remonte comme une erreur de validation lisible plutôt qu'en 413.
+        maxSize: '8M',
+        maxSizeMessage: "L'image ne doit pas dépasser {{ limit }} {{ suffix }} (fichier reçu : {{ size }} {{ suffix }}).",
+        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        mimeTypesMessage: 'Format non accepté ({{ type }}). Formats autorisés : JPEG, PNG et WebP.',
+        // En dessous, l'image ne tient pas la grille de la galerie ni
+        // l'affichage en lightbox.
+        minWidth: 800,
+        minWidthMessage: "L'image fait {{ width }} px de large, le minimum est {{ min_width }} px.",
+        minHeight: 600,
+        minHeightMessage: "L'image fait {{ height }} px de haut, le minimum est {{ min_height }} px.",
+        // Au-delà, c'est un fichier d'archive : il n'a rien à faire sur le web.
+        maxWidth: 8000,
+        maxWidthMessage: "L'image fait {{ width }} px de large, le maximum est {{ max_width }} px.",
+        maxHeight: 8000,
+        maxHeightMessage: "L'image fait {{ height }} px de haut, le maximum est {{ max_height }} px.",
+        // Un fichier dont l'en-tête annonce une image mais que GD ne sait pas
+        // décoder est rejeté : l'extension et le type MIME se falsifient.
+        detectCorrupted: true,
+        corruptedMessage: "Le fichier n'est pas une image exploitable ou est endommagé.",
+    )]
     #[Vich\UploadableField(mapping: 'photo_image', fileNameProperty: 'filePath')]
     private ?File $imageFile = null;
 
