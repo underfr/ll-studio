@@ -20,3 +20,6 @@
 
 # macOS
 .DS_Store
+
+# Fichiers envoyés depuis le back-office et images de fixtures copiées
+/backend/public/uploads/
