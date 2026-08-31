@@ -5,3 +5,12 @@ api_platform:
         stateless: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
+
+        # Pagination (issue #7)
+        pagination_enabled: true
+        pagination_items_per_page: 20
+        # Le client peut demander une autre taille de page via ?itemsPerPage=…
+        pagination_client_items_per_page: true
+        pagination_maximum_items_per_page: 60
+        # …mais il ne peut pas désactiver la pagination entièrement.
+        pagination_client_enabled: false

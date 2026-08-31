@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -33,7 +38,20 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     normalizationContext: ['groups' => ['photo:read']],
     denormalizationContext: ['groups' => ['photo:write']],
+    order: ['createdAt' => 'DESC'],
+    paginationItemsPerPage: 24,
 )]
+#[ApiFilter(SearchFilter::class, properties: [
+    'title' => 'ipartial',
+    'description' => 'ipartial',
+    'category' => 'exact',
+    'category.slug' => 'exact',
+    'albums' => 'exact',
+    'albums.slug' => 'exact',
+])]
+#[ApiFilter(BooleanFilter::class, properties: ['visible'])]
+#[ApiFilter(DateFilter::class, properties: ['createdAt'])]
+#[ApiFilter(OrderFilter::class, properties: ['createdAt', 'title'], arguments: ['orderParameterName' => 'order'])]
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
 #[ORM\Table(name: 'photo')]
 #[ORM\Index(name: 'idx_photo_visible_created', columns: ['visible', 'created_at'])]

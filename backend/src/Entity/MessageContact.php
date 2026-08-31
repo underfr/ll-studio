@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use Symfony\Component\Serializer\Attribute\Groups;
 use App\Repository\MessageContactRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -34,7 +39,13 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     normalizationContext: ['groups' => ['message:read']],
     denormalizationContext: ['groups' => ['message:write']],
+    order: ['createdAt' => 'DESC'],
+    paginationItemsPerPage: 25,
 )]
+#[ApiFilter(SearchFilter::class, properties: ['email' => 'exact', 'subject' => 'ipartial', 'name' => 'ipartial'])]
+#[ApiFilter(BooleanFilter::class, properties: ['read'])]
+#[ApiFilter(DateFilter::class, properties: ['createdAt'])]
+#[ApiFilter(OrderFilter::class, properties: ['createdAt'], arguments: ['orderParameterName' => 'order'])]
 #[ORM\Entity(repositoryClass: MessageContactRepository::class)]
 #[ORM\Table(name: 'message_contact')]
 #[ORM\Index(name: 'idx_message_read_created', columns: ['is_read', 'created_at'])]
