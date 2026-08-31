@@ -9,3 +9,10 @@
 
 controllers:
     resource: routing.controllers
+
+# Point d'entrée du pare-feu json_login : la route doit exister pour que
+# Symfony y achemine la requête, mais aucun contrôleur ne l'exécute — c'est
+# l'authentificateur qui répond (cf. config/packages/security.yaml).
+api_login:
+    path: /api/login
+    methods: ['POST']

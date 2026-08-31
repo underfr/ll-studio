@@ -16,6 +16,27 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
 
+        # Échange e-mail + mot de passe contre un couple de jetons.
+        login:
+            pattern: ^/api/login$
+            stateless: true
+            provider: app_user_provider
+            json_login:
+                check_path: /api/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+        # Échange un jeton de rafraîchissement encore valide contre un
+        # nouveau couple de jetons, sans redemander le mot de passe.
+        token_refresh:
+            pattern: ^/api/token/refresh$
+            stateless: true
+            provider: app_user_provider
+            refresh_jwt:
+                check_path: /api/token/refresh
+
         # L'API est sans état : aucune session, le porteur du jeton est
         # identifié à chaque requête par l'en-tête Authorization.
         api:
@@ -32,6 +53,8 @@ security:
     # une par une au niveau des ressources (issue #13), ce qui laisse la
     # galerie publique lisible sans jeton.
     access_control:
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: PUBLIC_ACCESS }
 

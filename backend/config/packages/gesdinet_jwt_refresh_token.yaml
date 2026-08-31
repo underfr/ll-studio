@@ -1,0 +1,27 @@
+gesdinet_jwt_refresh_token:
+    refresh_token_class: App\Entity\RefreshToken
+
+    # Le jeton d'accès JWT est volontairement court (1 h, cf. lexik) ; le
+    # jeton de rafraîchissement, lui, garde la session ouverte 30 jours.
+    ttl: 2592000
+
+    # Chaque rafraîchissement consomme le jeton et en émet un nouveau : un
+    # jeton volé ne peut donc servir qu'une fois, et sa réutilisation est
+    # détectable.
+    single_use: true
+
+    # Le nouveau jeton repart pour 30 jours tant que l'utilisateur revient.
+    single_use_ttl_update: true
+
+    # La base ne stocke que l'empreinte du jeton : une copie du dump ne
+    # permet pas de rafraîchir une session.
+    hash_tokens:
+        enabled: true
+
+    # Une session par appareil, cinq appareils au maximum.
+    max_tokens_per_user: 5
+
+    # Ajoute POST /api/token/refresh à la spécification OpenAPI générée par
+    # API Platform, aux côtés de /api/login documenté par Lexik.
+    api_platform:
+        enabled: true
