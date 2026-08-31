@@ -1,18 +1,43 @@
 #!/bin/sh
 set -e
 
-# En dev les sources sont montées depuis l'hôte : vendor/ vit dans un volume
-# nommé et doit donc être (ré)installé au premier démarrage du conteneur.
-if [ "$1" = "php-fpm" ] && [ ! -f vendor/autoload_runtime.php ]; then
-    echo "[entrypoint] vendor/ absent — installation des dépendances Composer…"
-    composer install --prefer-dist --no-interaction --no-progress
-fi
+if [ "$1" = "php-fpm" ]; then
 
-# La paire de clés JWT n'est pas versionnée (config/jwt/*.pem est ignoré) :
-# on la génère au premier démarrage pour qu'un clone frais soit utilisable.
-if [ "$1" = "php-fpm" ] && [ ! -f config/jwt/private.pem ]; then
-    echo "[entrypoint] génération de la paire de clés JWT…"
-    php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+    # 1. Configuration Symfony. Le dépôt ne contient que .env.example : le
+    #    fichier .env effectif est dérivé ici et reste hors du dépôt.
+    if [ ! -f .env ]; then
+        echo "[entrypoint] .env absent — copie depuis .env.example…"
+        cp .env.example .env
+    fi
+
+    # 2. Secrets propres à cette installation, écrits dans .env.local, qui
+    #    n'est pas versionné. Chaque clone génère donc les siens : aucun
+    #    secret ne transite par git.
+    if ! grep -qs '^APP_SECRET=..*' .env.local; then
+        echo "[entrypoint] génération d'APP_SECRET…"
+        printf 'APP_SECRET=%s\n' "$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env.local
+    fi
+
+    if ! grep -qs '^JWT_PASSPHRASE=..*' .env.local; then
+        echo "[entrypoint] génération de JWT_PASSPHRASE…"
+        printf 'JWT_PASSPHRASE=%s\n' "$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env.local
+        # La passphrase change : les clés existantes ne seraient plus
+        # déchiffrables, on les régénère à l'étape 4.
+        rm -f config/jwt/private.pem config/jwt/public.pem
+    fi
+
+    # 3. En dev les sources sont montées depuis l'hôte : vendor/ vit dans un
+    #    volume nommé et doit être (ré)installé au premier démarrage.
+    if [ ! -f vendor/autoload_runtime.php ]; then
+        echo "[entrypoint] vendor/ absent — installation des dépendances Composer…"
+        composer install --prefer-dist --no-interaction --no-progress
+    fi
+
+    # 4. Paire de clés JWT, elle aussi hors du dépôt (config/jwt/*.pem).
+    if [ ! -f config/jwt/private.pem ]; then
+        echo "[entrypoint] génération de la paire de clés JWT…"
+        php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+    fi
 fi
 
 mkdir -p var/cache var/log
