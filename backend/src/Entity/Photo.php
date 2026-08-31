@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -14,6 +20,16 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Une photographie de la galerie. Le fichier lui-même est stocké sur le
  * disque ; l'entité n'en conserve que le chemin relatif (cf. issue #14).
  */
+#[ApiResource(
+    description: 'Photographies de la galerie.',
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(),
+        new Patch(),
+        new Delete(),
+    ],
+)]
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
 #[ORM\Table(name: 'photo')]
 #[ORM\Index(name: 'idx_photo_visible_created', columns: ['visible', 'created_at'])]

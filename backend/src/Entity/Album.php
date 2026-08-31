@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,6 +22,16 @@ use Symfony\Component\Validator\Constraints as Assert;
  * (« Aurores Boréales », « Puy du Fou 2024 »…). Une photo peut figurer dans
  * plusieurs albums.
  */
+#[ApiResource(
+    description: 'Séries photographiques regroupant plusieurs photos.',
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(),
+        new Patch(),
+        new Delete(),
+    ],
+)]
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 #[ORM\Table(name: 'album')]
 #[ORM\Index(name: 'idx_album_visible_created', columns: ['visible', 'created_at'])]
