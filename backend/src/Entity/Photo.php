@@ -17,6 +17,8 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\RequestBody;
+use App\State\PhotoUploadProcessor;
 use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -51,10 +53,34 @@ use Vich\UploaderBundle\Mapping\Annotation as Vich;
             ),
         ),
         new Post(
+            inputFormats: ['multipart' => ['multipart/form-data']],
             security: "is_granted('ROLE_ADMIN')",
+            validationContext: ['groups' => ['Default', 'photo:create']],
+            processor: PhotoUploadProcessor::class,
             openapi: new OpenApiOperation(
-                summary: 'Ajouter une photographie',
-                description: "Réservé au back-office. Cette opération enregistre les métadonnées ; l'envoi du fichier disposera de son propre endpoint sécurisé (issue #16).",
+                summary: 'Téléverser une photographie',
+                description: "Réservé au back-office. La requête est un multipart/form-data : le fichier dans "
+                    ."`imageFile`, les métadonnées dans les autres champs. L'auteur est déduit du jeton, il n'est "
+                    ."pas transmissible. Contraintes du fichier : JPEG, PNG ou WebP, 8 Mo au plus, entre 800 × 600 "
+                    ."et 8000 × 8000 pixels.",
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'required' => ['imageFile', 'title', 'alt', 'category'],
+                                'properties' => [
+                                    'imageFile' => ['type' => 'string', 'format' => 'binary'],
+                                    'title' => ['type' => 'string', 'example' => 'Légende orange à Nogaro'],
+                                    'alt' => ['type' => 'string', 'example' => 'Porsche Jägermeister orange sur le circuit de Nogaro'],
+                                    'description' => ['type' => 'string'],
+                                    'category' => ['type' => 'string', 'example' => '/api/categories/4'],
+                                    'visible' => ['type' => 'boolean', 'example' => true],
+                                ],
+                            ],
+                        ],
+                    ]),
+                ),
             ),
         ),
         new Patch(
@@ -121,8 +147,10 @@ class Photo
     /**
      * Nom du fichier sur le disque, renseigné par VichUploader.
      */
+    // Pas de NotBlank : VichUploader renseigne cette colonne au moment du
+    // flush, donc après la validation. C'est imageFile qui porte la
+    // contrainte d'obligation à la création.
     #[ORM\Column(length: 255, unique: true)]
-    #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
     #[ApiProperty(
         description: "Nom du fichier stocké sur le disque. Renseigné par VichUploader à l'envoi du fichier, pas modifiable directement.",
@@ -163,6 +191,12 @@ class Photo
         detectCorrupted: true,
         corruptedMessage: "Le fichier n'est pas une image exploitable ou est endommagé.",
     )]
+    #[ApiProperty(
+        description: 'Fichier image. À transmettre en multipart/form-data sur POST /api/photos.',
+        readable: false,
+    )]
+    #[Assert\NotNull(message: 'Une photo doit être accompagnée de son fichier image.', groups: ['photo:create'])]
+    #[Groups(['photo:write'])]
     #[Vich\UploadableField(mapping: 'photo_image', fileNameProperty: 'filePath')]
     private ?File $imageFile = null;
 
