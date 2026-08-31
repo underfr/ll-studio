@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\MessageContactRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -12,6 +18,19 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Message envoyé depuis le formulaire de contact public, consulté depuis
  * l'écran « Messages » du back-office.
  */
+#[ApiResource(
+    shortName: 'Message',
+    description: 'Messages reçus via le formulaire de contact public.',
+    operations: [
+        // Ouverte au public : c'est le formulaire de contact du site.
+        new Post(),
+        // Réservées au back-office (sécurisation à l'issue #13).
+        new GetCollection(),
+        new Get(),
+        new Patch(),
+        new Delete(),
+    ],
+)]
 #[ORM\Entity(repositoryClass: MessageContactRepository::class)]
 #[ORM\Table(name: 'message_contact')]
 #[ORM\Index(name: 'idx_message_read_created', columns: ['is_read', 'created_at'])]
