@@ -7,6 +7,7 @@ namespace App\Entity;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -14,6 +15,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\State\UserPasswordHasherProcessor;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -34,13 +36,21 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(openapi: new OpenApiOperation(summary: 'Lister les comptes')),
         new Get(openapi: new OpenApiOperation(summary: 'Consulter un compte')),
         new Post(
+            processor: UserPasswordHasherProcessor::class,
+            validationContext: ['groups' => ['Default', 'user:create']],
             openapi: new OpenApiOperation(
                 summary: 'Créer un compte',
-                description: "Le mot de passe n'appartient à aucun groupe de sérialisation : il ne peut être ni lu ni "
-                    ."écrit par l'API tant que le processor de hachage de l'issue #10 n'est pas en place.",
+                description: "Le mot de passe se transmet en clair dans `plainPassword` : il est haché avant "
+                    ."enregistrement et n'est jamais relu. La colonne `password` n'est exposée par aucun groupe.",
             ),
         ),
-        new Patch(openapi: new OpenApiOperation(summary: 'Modifier un compte')),
+        new Patch(
+            processor: UserPasswordHasherProcessor::class,
+            openapi: new OpenApiOperation(
+                summary: 'Modifier un compte',
+                description: "Transmettre `plainPassword` change le mot de passe ; l'omettre le laisse inchangé.",
+            ),
+        ),
         new Delete(openapi: new OpenApiOperation(summary: 'Supprimer un compte')),
     ],
     normalizationContext: ['groups' => ['user:read']],
@@ -75,10 +85,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     /**
-     * Mot de passe hashé — jamais exposé par l'API (cf. issue #6).
+     * Mot de passe haché — jamais exposé par l'API (cf. issue #6).
      */
     #[ORM\Column]
     private string $password = '';
+
+    /**
+     * Mot de passe en clair reçu à la création ou à la modification d'un
+     * compte. Il n'est pas persisté : UserPasswordHasherProcessor le hache
+     * puis vide cette propriété.
+     */
+    #[ApiProperty(description: 'Mot de passe en clair. Écriture seule : il est haché puis oublié.', example: 'Temporaire123!')]
+    #[Groups(['user:write'])]
+    #[Assert\NotBlank(groups: ['user:create'])]
+    #[Assert\Length(min: 8, max: 4096)]
+    private ?string $plainPassword = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
@@ -174,9 +195,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): static
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
+    /**
+     * Efface le mot de passe en clair dès qu'il a été haché.
+     */
     public function eraseCredentials(): void
     {
-        // Aucune donnée sensible temporaire n'est stockée sur l'entité.
+        $this->plainPassword = null;
     }
 
     public function getFirstName(): string
