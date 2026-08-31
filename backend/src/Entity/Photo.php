@@ -9,12 +9,14 @@ use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -29,12 +31,36 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Photographies de la galerie.',
     operations: [
-        new GetCollection(),
-        // La vue détaillée ajoute updatedAt, l'auteur et les albums associés.
-        new Get(normalizationContext: ['groups' => ['photo:read', 'photo:item:read']]),
-        new Post(),
-        new Patch(),
-        new Delete(),
+        new GetCollection(
+            openapi: new OpenApiOperation(
+                summary: 'Lister les photographies',
+                description: "Collection paginée (24 éléments par défaut), triée de la plus récente à la plus ancienne.\n\n"
+                    ."Filtres disponibles : `category.slug`, `albums.slug`, `visible`, `createdAt[after]`/`createdAt[before]`, "
+                    ."recherche insensible à la casse sur `title` et `description`, tri via `order[createdAt]` ou `order[title]`.",
+            ),
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['photo:read', 'photo:item:read']],
+            openapi: new OpenApiOperation(
+                summary: 'Consulter une photographie',
+                description: "Ajoute à la vue liste la date de dernière modification, l'auteur et les albums dans lesquels la photo apparaît.",
+            ),
+        ),
+        new Post(
+            openapi: new OpenApiOperation(
+                summary: 'Ajouter une photographie',
+                description: "Réservé au back-office. Cette opération enregistre les métadonnées ; l'envoi du fichier disposera de son propre endpoint sécurisé (issue #16).",
+            ),
+        ),
+        new Patch(
+            openapi: new OpenApiOperation(
+                summary: 'Modifier une photographie',
+                description: 'Mise à jour partielle : seuls les champs transmis sont modifiés.',
+            ),
+        ),
+        new Delete(
+            openapi: new OpenApiOperation(summary: 'Supprimer une photographie'),
+        ),
     ],
     normalizationContext: ['groups' => ['photo:read']],
     denormalizationContext: ['groups' => ['photo:write']],
@@ -67,6 +93,7 @@ class Photo
     #[ORM\Column(length: 120)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 120)]
+    #[ApiProperty(description: 'Titre affiché sous la photo et dans la lightbox.', example: 'Légende orange à Nogaro')]
     #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $title = '';
 
@@ -79,6 +106,7 @@ class Photo
      */
     #[ORM\Column(type: 'text')]
     #[Assert\NotBlank(message: "Le texte alternatif est obligatoire pour l'accessibilité.")]
+    #[ApiProperty(description: "Texte alternatif, obligatoire : il est lu par les lecteurs d'écran et affiché si l'image ne charge pas.", example: 'Porsche Jägermeister orange n°64 sur le circuit de Nogaro')]
     #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $alt = '';
 
@@ -88,6 +116,7 @@ class Photo
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[ApiProperty(description: "Chemin du fichier relatif à la racine publique de l'API.", example: 'uploads/photos/img01.jpg')]
     #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
     private string $filePath = '';
 
@@ -95,6 +124,7 @@ class Photo
      * Une photo masquée reste en base mais disparaît du site public.
      */
     #[ORM\Column]
+    #[ApiProperty(description: 'Une photo masquée reste en base mais disparaît du site public.', example: true)]
     #[Groups(['photo:read', 'photo:write'])]
     private bool $visible = true;
 
