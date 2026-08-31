@@ -31,6 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'Messages reçus via le formulaire de contact public.',
     operations: [
         new Post(
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Envoyer un message',
                 description: "Endpoint du formulaire de contact public : c'est la seule opération de cette ressource "
@@ -38,22 +39,24 @@ use Symfony\Component\Validator\Constraints as Assert;
             ),
         ),
         new GetCollection(
+            security: "is_granted('ROLE_ADMIN')",
             openapi: new OpenApiOperation(
                 summary: 'Lister les messages reçus',
                 description: "Boîte de réception du back-office, triée du plus récent au plus ancien. `?read=false` "
                     ."renvoie les messages non lus, qui alimentent le badge du tableau de bord.",
             ),
         ),
-        new Get(openapi: new OpenApiOperation(summary: 'Consulter un message')),
+        new Get(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Consulter un message')),
         // Le back-office ne modifie qu'un seul champ : le marqueur « lu ».
         new Patch(
             denormalizationContext: ['groups' => ['message:update']],
+            security: "is_granted('ROLE_ADMIN')",
             openapi: new OpenApiOperation(
                 summary: 'Marquer un message comme lu',
                 description: "Seul le champ `read` est modifiable : le contenu d'un message reçu ne peut pas être réécrit.",
             ),
         ),
-        new Delete(openapi: new OpenApiOperation(summary: 'Supprimer un message')),
+        new Delete(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Supprimer un message')),
     ],
     normalizationContext: ['groups' => ['message:read']],
     denormalizationContext: ['groups' => ['message:write']],

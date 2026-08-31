@@ -31,16 +31,18 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'Catégories thématiques utilisées pour classer les photos et les albums.',
     operations: [
         new GetCollection(
+            security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Lister les catégories',
                 description: "Collection volontairement non paginée : elle alimente les filtres de la galerie et les menus "
                     ."déroulants du back-office. Triée par nom croissant, avec le nombre de photos rattachées.",
             ),
         ),
-        new Get(openapi: new OpenApiOperation(summary: 'Consulter une catégorie')),
-        new Post(openapi: new OpenApiOperation(summary: 'Créer une catégorie')),
-        new Patch(openapi: new OpenApiOperation(summary: 'Renommer une catégorie')),
+        new Get(security: "is_granted('PUBLIC_ACCESS')", openapi: new OpenApiOperation(summary: 'Consulter une catégorie')),
+        new Post(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Créer une catégorie')),
+        new Patch(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Renommer une catégorie')),
         new Delete(
+            security: "is_granted('ROLE_ADMIN')",
             openapi: new OpenApiOperation(
                 summary: 'Supprimer une catégorie',
                 description: "Échoue si des photos ou des albums y sont encore rattachés (contrainte ON DELETE RESTRICT).",

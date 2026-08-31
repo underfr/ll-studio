@@ -31,6 +31,7 @@ use Symfony\Component\Filesystem\Filesystem;
 final class AppFixtures extends Fixture
 {
     private const SOURCE_DIR = 'fixtures/photos';
+    private const HIDDEN_PHOTO = 8;
     private const TARGET_DIR = 'public/uploads/photos';
 
     public function __construct(
@@ -65,7 +66,9 @@ final class AppFixtures extends Fixture
                 'description' => $data['description'],
                 'alt' => $data['alt'],
                 'filePath' => \sprintf('uploads/photos/img%02d.jpg', $index),
-                'visible' => true,
+                // Une photo reste masquée : elle sert à vérifier que le site
+                // public ne la voit pas, même en devinant son identifiant.
+                'visible' => self::HIDDEN_PHOTO !== $index,
                 'createdAt' => new \DateTimeImmutable($data['createdAt']),
                 'category' => $categories[$data['category']],
                 'owner' => $admin,

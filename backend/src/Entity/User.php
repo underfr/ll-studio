@@ -34,9 +34,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     description: 'Comptes du back-office.',
     operations: [
-        new GetCollection(openapi: new OpenApiOperation(summary: 'Lister les comptes')),
-        new Get(openapi: new OpenApiOperation(summary: 'Consulter un compte')),
+        new GetCollection(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Lister les comptes')),
+        new Get(security: "is_granted('ROLE_ADMIN') or object == user", openapi: new OpenApiOperation(summary: 'Consulter un compte')),
         new Post(
+            security: "is_granted('ROLE_ADMIN')",
             processor: UserPasswordHasherProcessor::class,
             validationContext: ['groups' => ['Default', 'user:create']],
             openapi: new OpenApiOperation(
@@ -46,13 +47,14 @@ use Symfony\Component\Validator\Constraints as Assert;
             ),
         ),
         new Patch(
+            security: "is_granted('ROLE_ADMIN') or object == user",
             processor: UserPasswordHasherProcessor::class,
             openapi: new OpenApiOperation(
                 summary: 'Modifier un compte',
                 description: "Transmettre `plainPassword` change le mot de passe ; l'omettre le laisse inchangé.",
             ),
         ),
-        new Delete(openapi: new OpenApiOperation(summary: 'Supprimer un compte')),
+        new Delete(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Supprimer un compte')),
     ],
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:write']],
@@ -85,8 +87,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var list<string>
      */
     #[ApiProperty(
-        description: 'Rôles accordés au compte. ROLE_USER est implicite.',
+        description: 'Rôles accordés au compte. ROLE_USER est implicite. Seul un administrateur peut les modifier.',
         example: ['ROLE_ADMIN'],
+        security: "is_granted('ROLE_ADMIN')",
     )]
     #[Assert\All([
         new Assert\Choice(callback: [Role::class, 'values'], message: 'Le rôle « {{ value }} » n’existe pas.'),
