@@ -12,8 +12,9 @@ vich_uploader:
             upload_destination: '%kernel.project_dir%/public/uploads/photos'
             uri_prefix: /uploads/photos
 
-            # Nom de fichier dérivé du titre puis suffixé d'un identifiant
-            # unique : lisible dans le dossier, sans collision possible.
+            # Nom de fichier dérivé du nom d'origine, nettoyé puis suffixé
+            # d'un identifiant unique : le dossier reste lisible et deux
+            # envois du même fichier ne s'écrasent pas.
             namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
 
             # Le fichier précédent est effacé quand la photo est remplacée
