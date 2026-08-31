@@ -21,8 +21,10 @@ use App\Repository\PhotoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 /**
  * Une photographie de la galerie. Le fichier lui-même est stocké sur le
@@ -87,6 +89,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'photo')]
 #[ORM\Index(name: 'idx_photo_visible_created', columns: ['visible', 'created_at'])]
 #[ORM\HasLifecycleCallbacks]
+#[Vich\Uploadable]
 class Photo
 {
     #[ORM\Id]
@@ -116,14 +119,37 @@ class Photo
     private string $alt = '';
 
     /**
-     * Chemin du fichier relatif au dossier public d'upload.
+     * Nom du fichier sur le disque, renseigné par VichUploader.
      */
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
-    #[ApiProperty(description: "Chemin du fichier relatif à la racine publique de l'API.", example: 'uploads/photos/img01.jpg')]
-    #[Groups(['photo:read', 'photo:write', 'album:read', 'album:item:read'])]
+    #[ApiProperty(
+        description: "Nom du fichier stocké sur le disque. Renseigné par VichUploader à l'envoi du fichier, pas modifiable directement.",
+        example: 'legende-orange-a-nogaro-68b3f1c2d4e5a.jpg',
+    )]
+    #[Groups(['photo:read', 'album:read', 'album:item:read'])]
     private string $filePath = '';
+
+    /**
+     * Fichier envoyé. Il n'est pas persisté : VichUploader l'écrit sur le
+     * disque et renseigne $filePath. Les contraintes de validation du
+     * fichier arrivent à l'issue #15.
+     */
+    #[Vich\UploadableField(mapping: 'photo_image', fileNameProperty: 'filePath')]
+    private ?File $imageFile = null;
+
+    /**
+     * URL publique de l'image, calculée par PhotoContentUrlNormalizer à
+     * partir du mapping VichUploader. En lecture seule.
+     */
+    #[ApiProperty(
+        description: "URL publique de l'image, servie par Nginx.",
+        example: '/uploads/photos/legende-orange-a-nogaro-68b3f1c2d4e5a.jpg',
+        writable: false,
+    )]
+    #[Groups(['photo:read', 'album:read', 'album:item:read'])]
+    private ?string $contentUrl = null;
 
     /**
      * Une photo masquée reste en base mais disparaît du site public.
@@ -214,6 +240,39 @@ class Photo
     public function setFilePath(string $filePath): static
     {
         $this->filePath = $filePath;
+
+        return $this;
+    }
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    /**
+     * Doctrine ne détecte un changement que sur une propriété mappée : on
+     * touche updatedAt pour que VichUploader soit déclenché même si aucun
+     * autre champ n'a bougé.
+     */
+    public function setImageFile(?File $imageFile): static
+    {
+        $this->imageFile = $imageFile;
+
+        if (null !== $imageFile) {
+            $this->updatedAt = new \DateTimeImmutable();
+        }
+
+        return $this;
+    }
+
+    public function getContentUrl(): ?string
+    {
+        return $this->contentUrl;
+    }
+
+    public function setContentUrl(?string $contentUrl): static
+    {
+        $this->contentUrl = $contentUrl;
 
         return $this;
     }

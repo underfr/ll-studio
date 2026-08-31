@@ -1,0 +1,22 @@
+vich_uploader:
+    db_driver: orm
+
+    # Les métadonnées sont lues depuis les attributs PHP des entités.
+    metadata:
+        type: attribute
+
+    mappings:
+        photo_image:
+            # Même dossier que celui servi par Nginx et alimenté par les
+            # fixtures (cf. AppFixtures).
+            upload_destination: '%kernel.project_dir%/public/uploads/photos'
+            uri_prefix: /uploads/photos
+
+            # Nom de fichier dérivé du titre puis suffixé d'un identifiant
+            # unique : lisible dans le dossier, sans collision possible.
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+            # Le fichier précédent est effacé quand la photo est remplacée
+            # ou supprimée : pas d'orphelins sur le disque.
+            delete_on_update: true
+            delete_on_remove: true
