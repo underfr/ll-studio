@@ -28,6 +28,24 @@ function fermer(): void {
     index.value = null
 }
 
+/**
+ * Ferme dès que le clic tombe ailleurs que sur la photographie, sa légende
+ * ou une commande.
+ *
+ * Le test porte sur la cible réelle du clic plutôt que sur un calque de fond :
+ * la scène et ses marges recouvrent le voile, si bien qu'un simple gestionnaire
+ * sur celui-ci laissait une large zone morte autour de l'image.
+ */
+function surClic(evenement: MouseEvent): void {
+    const cible = evenement.target as HTMLElement | null
+
+    if (cible?.closest('.visionneuse__photo, .visionneuse__legende, button')) {
+        return
+    }
+
+    fermer()
+}
+
 /** La navigation boucle : après la dernière photographie vient la première. */
 function deplacer(pas: number): void {
     if (index.value === null || props.photos.length === 0) {
@@ -144,9 +162,9 @@ watch(index, () => {
             role="dialog"
             aria-modal="true"
             :aria-label="`Photographie : ${photo.title}`"
+            @click="surClic"
         >
-            <!-- Fermer en cliquant à côté de la photographie. -->
-            <div class="visionneuse__fond" @click="fermer" />
+            <div class="visionneuse__fond" />
 
             <div class="visionneuse__barre">
                 <p class="visionneuse__compteur">
@@ -184,7 +202,7 @@ watch(index, () => {
                 </figcaption>
             </figure>
 
-            <template v-if="plusieurs">
+            <div v-if="plusieurs" class="visionneuse__commandes">
                 <button
                     type="button"
                     class="visionneuse__nav visionneuse__nav--precedent"
@@ -201,7 +219,7 @@ watch(index, () => {
                 >
                     &#8594;
                 </button>
-            </template>
+            </div>
         </div>
     </Teleport>
 </template>
@@ -257,15 +275,30 @@ watch(index, () => {
     justify-content: center;
     gap: 20px;
     margin: 0;
-    padding: 0 var(--gouttiere) 32px;
+    padding: 0 var(--gouttiere) 8px;
 }
 
+@media (min-width: 900px) {
+    /*
+     * Marge horizontale réservée aux flèches, pour que la photographie ne
+     * passe jamais dessous.
+     */
+    .visionneuse__scene {
+        padding: 0 104px 24px;
+    }
+}
+
+/*
+ * La boîte de l'image épouse l'image rendue, au lieu de s'étirer sur toute la
+ * scène avec un object-fit qui laisserait des marges transparentes cliquables.
+ * C'est ce qui permet de fermer en cliquant juste à côté de la photographie.
+ */
 .visionneuse__photo {
-    max-width: 100%;
-    /* La photographie occupe la place restante sans jamais pousser la
-       légende hors de l'écran. */
     min-height: 0;
-    flex: 1;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
 }
 
@@ -299,9 +332,21 @@ watch(index, () => {
     line-height: 1.6;
 }
 
+/*
+ * Sur mobile les flèches se rangent sous la légende : posées sur les côtés,
+ * elles empiéteraient sur une photographie qui occupe déjà toute la largeur.
+ * À partir de 900 px, la place existe et elles reprennent leur position
+ * latérale, dans la marge réservée par la scène.
+ */
+.visionneuse__commandes {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    padding-bottom: 26px;
+}
+
 .visionneuse__nav {
-    position: absolute;
-    top: 50%;
     display: flex;
     width: 48px;
     height: 48px;
@@ -312,7 +357,6 @@ watch(index, () => {
     color: var(--texte-sur-sombre);
     cursor: pointer;
     font-size: 20px;
-    transform: translateY(-50%);
     transition: border-color var(--transition-courte), background-color var(--transition-courte);
 }
 
@@ -321,15 +365,19 @@ watch(index, () => {
     background-color: rgb(244 240 232 / 12%);
 }
 
-.visionneuse__nav--precedent {
-    left: 12px;
-}
-
-.visionneuse__nav--suivant {
-    right: 12px;
-}
-
 @media (min-width: 900px) {
+    /* display: contents efface la boîte du groupe : les boutons se
+       positionnent alors par rapport à la visionneuse elle-même. */
+    .visionneuse__commandes {
+        display: contents;
+    }
+
+    .visionneuse__nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
     .visionneuse__nav--precedent {
         left: 24px;
     }
