@@ -15,6 +15,7 @@ export interface LienNavigation {
 const LIENS_PUBLICS: readonly LienNavigation[] = [
     { libelle: 'Accueil', chemin: '/' },
     { libelle: 'Galerie', chemin: '/galerie' },
+    { libelle: 'Albums', chemin: '/albums' },
     { libelle: 'Contact', chemin: '/contact' },
 ]
 

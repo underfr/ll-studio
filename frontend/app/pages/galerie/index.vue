@@ -53,7 +53,7 @@ const photoOuverte = ref<number | null>(null)
             <GalerieBascule :actif="modeActif" />
         </div>
 
-        <GalerieFiltres :categories="universDisponibles" :actif="categorieActive" />
+        <AppFiltresCategories :categories="universDisponibles" :actif="categorieActive" base="/galerie" />
 
         <p class="galerie__compte" aria-live="polite">
             {{ total }} {{ total > 1 ? 'photographies' : 'photographie' }}

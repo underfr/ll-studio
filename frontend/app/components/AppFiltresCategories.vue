@@ -2,16 +2,18 @@
 import type { Categorie } from '~/types/api'
 
 /**
- * Chips de filtrage par catégorie.
+ * Chips de filtrage par catégorie, partagées par la galerie et les albums.
  *
  * Ce sont des liens et non des boutons : le filtre vit dans l'URL, donc
- * chaque état de la galerie est partageable, indexable et navigable avec les
+ * chaque état de la page est partageable, indexable et navigable avec les
  * boutons précédent et suivant du navigateur.
  */
-defineProps<{
+const props = defineProps<{
     categories: Categorie[]
     /** Slug actif, chaîne vide quand aucun filtre n'est appliqué. */
     actif: string
+    /** Page sur laquelle les liens rebouclent. */
+    base: string
 }>()
 
 const route = useRoute()
@@ -27,7 +29,7 @@ function versCategorie(slug: string) {
         delete query.categorie
     }
 
-    return { path: '/galerie', query }
+    return { path: props.base, query }
 }
 </script>
 
