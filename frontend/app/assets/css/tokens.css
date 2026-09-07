@@ -172,3 +172,97 @@ button {
     color: var(--texte-tertiaire);
     font-size: 15px;
 }
+
+/*
+ * Boutons de la maquette. Deux variantes seulement : un aplat or pour
+ * l'action principale, un contour clair pour l'action secondaire posée sur
+ * une photographie.
+ */
+.bouton {
+    display: inline-flex;
+    align-items: center;
+    padding: 15px 26px;
+    font-family: var(--police-ui);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: background-color var(--transition-courte), color var(--transition-courte),
+        border-color var(--transition-courte);
+}
+
+.bouton--or {
+    background-color: var(--or-remplissage);
+    color: var(--texte-sur-or);
+    font-weight: 700;
+}
+
+.bouton--or:hover {
+    background-color: var(--or-texte);
+    color: var(--texte-sur-sombre);
+}
+
+.bouton--contour {
+    border: 1px solid rgb(244 240 232 / 50%);
+    color: var(--texte-sur-sombre);
+}
+
+.bouton--contour:hover {
+    border-color: var(--texte-sur-sombre);
+    background-color: rgb(244 240 232 / 10%);
+}
+
+/*
+ * En-tête de section : surtitre en or, titre en Cormorant, lien de report
+ * aligné sur la ligne de base du titre.
+ */
+.section {
+    padding: 56px var(--gouttiere);
+}
+
+@media (min-width: 900px) {
+    .section {
+        padding: 80px var(--gouttiere);
+    }
+}
+
+.section__tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+@media (min-width: 900px) {
+    .section__tete {
+        margin-bottom: 40px;
+    }
+}
+
+.section__kicker {
+    margin-bottom: 6px;
+    color: var(--or-texte);
+    font-family: var(--police-ui);
+    font-size: clamp(10px, 0.9vw, 11px);
+    letter-spacing: clamp(3px, 0.35vw, 4px);
+    text-transform: uppercase;
+}
+
+.section__titre {
+    font-size: clamp(40px, 4.5vw, 64px);
+    letter-spacing: -1px;
+}
+
+.section__report {
+    color: var(--or-texte);
+    font-family: var(--police-ui);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color var(--transition-courte);
+}
+
+.section__report:hover {
+    color: var(--texte-principal);
+}
