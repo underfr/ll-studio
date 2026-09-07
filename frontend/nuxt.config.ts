@@ -5,6 +5,24 @@ export default defineNuxtConfig({
 
     css: ['~/assets/css/tokens.css'],
 
+    runtimeConfig: {
+        /*
+         * Origine de l'API vue depuis le serveur Nuxt. Sous Docker, il joint
+         * le conteneur nginx par le réseau interne, sans repasser par le port
+         * publié sur l'hôte. Alimentée par NUXT_API_BASE_SERVER.
+         */
+        apiBaseServer: '',
+
+        public: {
+            /*
+             * Origine de l'API vue depuis le navigateur du visiteur. C'est
+             * elle qui doit apparaître dans le HTML servi.
+             * Alimentée par NUXT_PUBLIC_API_BASE.
+             */
+            apiBase: 'http://localhost:8000',
+        },
+    },
+
     app: {
         head: {
             htmlAttrs: { lang: 'fr' },
