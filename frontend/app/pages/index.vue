@@ -30,7 +30,7 @@ const univers = computed(() => categories.value?.member ?? [])
                 <h2 class="section__titre">Albums en vedette</h2>
             </div>
 
-            <NuxtLink to="/galerie" class="section__report">Tout voir →</NuxtLink>
+            <NuxtLink to="/albums" class="section__report">Tout voir →</NuxtLink>
         </div>
 
         <div class="grille">

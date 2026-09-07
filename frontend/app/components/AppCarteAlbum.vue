@@ -14,7 +14,7 @@ defineProps<{
 </script>
 
 <template>
-    <NuxtLink :to="`/galerie/${album.slug}`" class="carte">
+    <NuxtLink :to="`/albums/${album.slug}`" class="carte">
         <img
             v-if="album.coverPhoto"
             class="carte__photo"
