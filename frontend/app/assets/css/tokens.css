@@ -1,0 +1,174 @@
+/*
+ * Jetons de design — repris un pour un des variables du fichier Figma
+ * « Fil rouge CDA ». Les noms suivent ceux de la maquette pour qu'un aller-retour
+ * avec le design reste lisible.
+ */
+:root {
+    /* Fonds */
+    --fond-page: #faf7f1;
+    --fond-surface-teintee: #efe9dd;
+
+    /* Textes */
+    --texte-principal: #12100c;
+    --texte-secondaire: rgb(18 16 12 / 68%);
+    --texte-tertiaire: rgb(18 16 12 / 50%);
+    --texte-sur-sombre: #f4f0e8;
+
+    /* Or — couleur d'accent de la marque */
+    --or-texte: #7a5e18;
+    --or-remplissage: #c9a24b;
+    --texte-sur-or: #12100c;
+
+    /* Voiles et bordures */
+    --voile-leger: rgb(18 16 12 / 6%);
+    --bordure-tenue: rgb(18 16 12 / 8%);
+    --bordure-default: rgb(18 16 12 / 12%);
+    --bordure-discrete: rgb(18 16 12 / 20%);
+    --scrim: rgb(8 7 5 / 60%);
+
+    /* Familles typographiques */
+    --police-titre: "Cormorant Garamond", garamond, georgia, "Times New Roman", serif;
+    --police-ui: "Space Mono", ui-monospace, sfmono-regular, menlo, monospace;
+    --police-texte: Archivo, system-ui, -apple-system, "Segoe UI", helvetica, sans-serif;
+
+    /* Rythme */
+    --gouttiere: 22px;
+    --largeur-max: 1440px;
+    --largeur-panneau-mobile: 288px;
+
+    /* Transitions */
+    --transition-courte: 160ms ease;
+    --transition-panneau: 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* La maquette desktop travaille sur une gouttière de 40 px. */
+@media (min-width: 900px) {
+    :root {
+        --gouttiere: 40px;
+    }
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+body {
+    margin: 0;
+    background-color: var(--fond-page);
+    color: var(--texte-principal);
+    font-family: var(--police-texte);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    margin: 0;
+    font-family: var(--police-titre);
+    font-weight: 500;
+    letter-spacing: -0.5px;
+    line-height: 1.05;
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+}
+
+/*
+ * Anneau de focus commun. Il reste visible sur fond clair comme sur l'or,
+ * ce qui évite d'avoir à le redéfinir composant par composant.
+ */
+:focus-visible {
+    outline: 2px solid var(--or-texte);
+    outline-offset: 3px;
+}
+
+/* Lien d'évitement : visible uniquement quand il reçoit le focus clavier. */
+.lien-evitement {
+    position: absolute;
+    z-index: 100;
+    top: 8px;
+    left: 8px;
+    padding: 10px 16px;
+    transform: translateY(-200%);
+    border: 1px solid var(--bordure-discrete);
+    background-color: var(--fond-page);
+    color: var(--texte-principal);
+    font-family: var(--police-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: transform var(--transition-courte);
+}
+
+.lien-evitement:focus {
+    transform: translateY(0);
+}
+
+/*
+ * Gabarit d'attente des pages dont le contenu relève d'une issue ultérieure.
+ * Ces règles disparaîtront au fil des issues #19 à #26.
+ */
+.jalon {
+    max-width: var(--largeur-max);
+    margin-inline: auto;
+    padding: 96px var(--gouttiere);
+}
+
+.jalon__rubrique {
+    color: var(--or-texte);
+    font-family: var(--police-ui);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.jalon__titre {
+    max-width: 18ch;
+    margin-top: 16px;
+    font-size: clamp(40px, 7vw, 76px);
+}
+
+.jalon__note {
+    margin-top: 24px;
+    color: var(--texte-tertiaire);
+    font-size: 15px;
+}
