@@ -63,8 +63,14 @@ export function useAlbums(parametres: () => ParametresCollection = () => ({})) {
  * `usePhotos(() => ({ 'albums.slug': slug }))`, ce qui évite une requête
  * enchaînée et laisse la pagination jouer son rôle.
  */
-export function useAlbum(slug: () => string) {
-    const requete = useApiFetch<CollectionJsonLd<Album>>(
+export async function useAlbum(slug: () => string) {
+    /*
+     * L'attente a lieu ici, et non chez l'appelant. Attendre un AsyncData de
+     * Nuxt ne rend pas l'objet de départ mais une copie, qui perdrait la
+     * propriété « album » ajoutée après coup. On résout donc la requête
+     * d'abord, puis on enrichit le résultat effectivement transmis.
+     */
+    const requete = await useApiFetch<CollectionJsonLd<Album>>(
         () => `/api/albums${chaineDeRequete({ slug: slug() })}`,
     )
 

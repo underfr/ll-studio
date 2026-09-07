@@ -16,9 +16,15 @@ withDefaults(defineProps<{
     photo: Photo
     variante?: 'mosaique' | 'grille'
     prioritaire?: boolean
+    /**
+     * La mosaïque d'une série se passe de légende : la catégorie et le titre
+     * de l'album sont déjà annoncés par le bandeau de couverture.
+     */
+    avecLegende?: boolean
 }>(), {
     variante: 'mosaique',
     prioritaire: false,
+    avecLegende: true,
 })
 </script>
 
@@ -32,9 +38,9 @@ withDefaults(defineProps<{
             decoding="async"
         >
 
-        <span class="tuile__voile" />
+        <span v-if="avecLegende" class="tuile__voile" />
 
-        <figcaption class="tuile__legende">
+        <figcaption v-if="avecLegende" class="tuile__legende">
             <span v-if="photo.category" class="tuile__categorie">{{ photo.category.name }}</span>
             <span class="tuile__titre">{{ photo.title }}</span>
         </figcaption>
