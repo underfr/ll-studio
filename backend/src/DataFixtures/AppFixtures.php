@@ -138,7 +138,7 @@ final class AppFixtures extends Fixture
                 'createdAt' => '2024-05-11 14:12:00',
             ],
             2 => [
-                'title' => 'Cavalier et danseuse — Les Mousquetaires',
+                'title' => 'Cavalier et danseuse · Les Mousquetaires',
                 'description' => "Un instant suspendu du spectacle Les Mousquetaires de Richelieu, capturé au cœur du Puy du Fou. Un cavalier masqué surgit dans une scène flamboyante, entre théâtre, danse et prouesse équestre.",
                 'alt' => "Scène du spectacle Les Mousquetaires de Richelieu au Puy du Fou avec un cavalier masqué sur un cheval blanc et une danseuse en robe rouge",
                 'category' => 'Spectacle',

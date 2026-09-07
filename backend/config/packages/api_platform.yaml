@@ -1,5 +1,5 @@
 api_platform:
-    title: 'LL Studio — API'
+    title: 'LL Studio · API'
     description: |
         API REST du portfolio photographique **LL Studio**.
 
@@ -34,7 +34,7 @@ api_platform:
             url: 'https://ll-studio.fr'
             email: 'contact@ll-studio.fr'
         license:
-            name: 'Propriétaire — tous droits réservés'
+            name: 'Propriétaire, tous droits réservés'
         swagger_ui_extra_configuration:
             # Les opérations sont repliées à l'ouverture : la page reste lisible.
             docExpansion: list

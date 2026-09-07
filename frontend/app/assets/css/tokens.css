@@ -1,5 +1,5 @@
 /*
- * Jetons de design — repris un pour un des variables du fichier Figma
+ * Jetons de design, repris un pour un des variables du fichier Figma
  * « Fil rouge CDA ». Les noms suivent ceux de la maquette pour qu'un aller-retour
  * avec le design reste lisible.
  */
@@ -14,7 +14,7 @@
     --texte-tertiaire: rgb(18 16 12 / 50%);
     --texte-sur-sombre: #f4f0e8;
 
-    /* Or — couleur d'accent de la marque */
+    /* Or : couleur d'accent de la marque */
     --or-texte: #7a5e18;
     --or-remplissage: #c9a24b;
     --texte-sur-or: #12100c;

@@ -6,7 +6,7 @@ if [ "$1" = "php-fpm" ]; then
     # 1. Configuration Symfony. Le dépôt ne contient que .env.example : le
     #    fichier .env effectif est dérivé ici et reste hors du dépôt.
     if [ ! -f .env ]; then
-        echo "[entrypoint] .env absent — copie depuis .env.example…"
+        echo "[entrypoint] .env absent, copie depuis .env.example…"
         cp .env.example .env
     fi
 
@@ -29,7 +29,7 @@ if [ "$1" = "php-fpm" ]; then
     # 3. En dev les sources sont montées depuis l'hôte : vendor/ vit dans un
     #    volume nommé et doit être (ré)installé au premier démarrage.
     if [ ! -f vendor/autoload_runtime.php ]; then
-        echo "[entrypoint] vendor/ absent — installation des dépendances Composer…"
+        echo "[entrypoint] vendor/ absent, installation des dépendances Composer…"
         composer install --prefer-dist --no-interaction --no-progress
     fi
 

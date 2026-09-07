@@ -12,7 +12,7 @@ withDefaults(defineProps<{ taille?: 'desktop' | 'mobile' }>(), {
 </script>
 
 <template>
-    <NuxtLink to="/" class="logo" :class="`logo--${taille}`" aria-label="LL Studio — retour à l'accueil">
+    <NuxtLink to="/" class="logo" :class="`logo--${taille}`" aria-label="LL Studio, retour à l'accueil">
         <span class="logo__initiales">LL</span>
         <span class="logo__mot">Studio</span>
     </NuxtLink>

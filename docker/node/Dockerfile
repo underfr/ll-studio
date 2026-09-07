@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ###############################################################################
-# base — Node 24 + pnpm (via corepack)
+# base : Node 24 + pnpm (via corepack)
 ###############################################################################
 FROM node:24-alpine AS base
 
@@ -13,7 +13,7 @@ ENV PNPM_HOME=/pnpm \
 WORKDIR /app
 
 ###############################################################################
-# dev — serveur de développement Nuxt avec HMR
+# dev : serveur de développement Nuxt avec HMR
 ###############################################################################
 FROM base AS dev
 
@@ -27,7 +27,7 @@ EXPOSE 3000
 CMD ["sh", "-c", "pnpm install --prefer-offline --store-dir=/pnpm/store && pnpm dev --host 0.0.0.0 --port 3000"]
 
 ###############################################################################
-# build — génère la sortie Nitro (.output)
+# build : génère la sortie Nitro (.output)
 ###############################################################################
 FROM base AS build
 
@@ -38,7 +38,7 @@ COPY frontend/ ./
 RUN pnpm build
 
 ###############################################################################
-# prod — serveur Nitro autonome, sans dépendances de build
+# prod : serveur Nitro autonome, sans dépendances de build
 ###############################################################################
 FROM node:24-alpine AS prod
 
