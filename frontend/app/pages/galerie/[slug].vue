@@ -33,6 +33,9 @@ const couverture = computed(() => album.value?.coverPhoto ?? liste.value[0])
 
 const nombrePhotos = computed(() => album.value?.photoCount ?? liste.value.length)
 
+/** Index de la photographie ouverte dans la visionneuse (issue #22). */
+const photoOuverte = ref<number | null>(null)
+
 useHead(() => ({
     title: album.value?.title ?? 'Série',
     meta: [
@@ -84,12 +87,15 @@ useHead(() => ({
                     variante="mosaique"
                     :avec-legende="false"
                     :prioritaire="rang < 3"
+                    @ouvrir="photoOuverte = rang"
                 />
             </div>
 
             <p v-else class="serie__vide">
                 Cette série ne contient encore aucune photographie publiée.
             </p>
+
+            <AppVisionneuse v-model:index="photoOuverte" :photos="liste" />
         </div>
     </article>
 </template>

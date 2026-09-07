@@ -37,6 +37,9 @@ const liste = computed(() => photos.value?.member ?? [])
 const total = computed(() => photos.value?.totalItems ?? 0)
 const universDisponibles = computed(() => categories.value?.member ?? [])
 const resteAcharger = computed(() => total.value > liste.value.length)
+
+/** Index de la photographie ouverte dans la visionneuse (issue #22). */
+const photoOuverte = ref<number | null>(null)
 </script>
 
 <template>
@@ -63,8 +66,11 @@ const resteAcharger = computed(() => total.value > liste.value.length)
                 :photo="photo"
                 :variante="modeActif"
                 :prioritaire="rang < 3"
+                @ouvrir="photoOuverte = rang"
             />
         </div>
+
+        <AppVisionneuse v-model:index="photoOuverte" :photos="liste" />
 
         <div v-if="resteAcharger" class="galerie__suite">
             <button type="button" class="bouton bouton--or" @click="nombreDemande += TRANCHE">

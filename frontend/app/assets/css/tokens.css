@@ -26,6 +26,8 @@
     --bordure-discrete: rgb(18 16 12 / 20%);
     --bordure-chip: rgb(18 16 12 / 25%);
     --scrim: rgb(8 7 5 / 60%);
+    /* La visionneuse assombrit davantage : la photographie doit primer. */
+    --scrim-visionneuse: rgb(8 7 5 / 94%);
 
     /* Familles typographiques */
     --police-titre: "Cormorant Garamond", garamond, georgia, "Times New Roman", serif;

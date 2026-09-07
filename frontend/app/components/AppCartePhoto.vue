@@ -8,9 +8,10 @@ import type { Photo } from '~/types/api'
  * - « mosaique » laisse respirer l'image et ne révèle la légende qu'au survol
  * - « grille » impose un carré et affiche la légende en permanence
  *
- * La tuile n'est pas encore cliquable : l'ouverture en lightbox arrive à
- * l'issue #22. Elle reste donc un simple <figure>, plutôt qu'un bouton qui
- * ne ferait rien.
+ * La tuile est un bouton : elle ouvre la photographie dans la visionneuse.
+ * Un <figure> aurait été plus parlant sémantiquement, mais le modèle de
+ * contenu de <button> ne l'accepte pas ; le libellé accessible porte donc
+ * l'intention à sa place.
  */
 withDefaults(defineProps<{
     photo: Photo
@@ -26,10 +27,18 @@ withDefaults(defineProps<{
     prioritaire: false,
     avecLegende: true,
 })
+
+defineEmits<{ ouvrir: [] }>()
 </script>
 
 <template>
-    <figure class="tuile" :class="`tuile--${variante}`">
+    <button
+        type="button"
+        class="tuile"
+        :class="`tuile--${variante}`"
+        :aria-label="`Agrandir : ${photo.title}`"
+        @click="$emit('ouvrir')"
+    >
         <img
             class="tuile__photo"
             :src="urlMedia(photo.contentUrl)"
@@ -40,20 +49,25 @@ withDefaults(defineProps<{
 
         <span v-if="avecLegende" class="tuile__voile" />
 
-        <figcaption v-if="avecLegende" class="tuile__legende">
+        <span v-if="avecLegende" class="tuile__legende">
             <span v-if="photo.category" class="tuile__categorie">{{ photo.category.name }}</span>
             <span class="tuile__titre">{{ photo.title }}</span>
-        </figcaption>
-    </figure>
+        </span>
+    </button>
 </template>
 
 <style scoped>
 .tuile {
     position: relative;
     display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
     margin: 0;
-    overflow: hidden;
     background-color: var(--fond-surface-teintee);
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
 }
 
 /*
