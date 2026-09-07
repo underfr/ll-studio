@@ -1,74 +1,106 @@
 <script setup lang="ts">
+import type { ModeAffichage } from '~/components/GalerieBascule.vue'
+
 useHead({ title: 'Galerie' })
 
+const route = useRoute()
+
 /*
- * Sonde de bout en bout des composables de l'issue #18 : elle vérifie que
- * les données traversent réellement le rendu serveur et que les URL de
- * médias pointent vers l'API. La grille responsive arrive à l'issue #20,
- * la vue détail d'une série à l'issue #21.
+ * L'état de la galerie tient entièrement dans l'URL : catégorie filtrée et
+ * mode d'affichage. Chaque vue est ainsi partageable, indexable et navigable
+ * avec les boutons précédent et suivant.
  */
-const { data: albums } = await useAlbums(() => ({ itemsPerPage: 3 }))
-const { data: photos } = await usePhotos(() => ({ itemsPerPage: 1 }))
+const categorieActive = computed(() => String(route.query.categorie ?? ''))
+const modeActif = computed<ModeAffichage>(() => route.query.vue === 'grille' ? 'grille' : 'mosaique')
+
+/*
+ * La maquette ne prévoit aucune pagination. Plutôt que d'en inventer une,
+ * la page charge une première tranche généreuse et propose d'en charger
+ * davantage seulement s'il reste quelque chose à voir.
+ */
+const TRANCHE = 24
+const nombreDemande = ref(TRANCHE)
+
+// Changer de filtre repart de la première tranche.
+watch(categorieActive, () => {
+    nombreDemande.value = TRANCHE
+})
+
+const { data: photos } = await usePhotos(() => ({
+    itemsPerPage: nombreDemande.value,
+    'category.slug': categorieActive.value || undefined,
+}))
+
 const { data: categories } = await useCategories()
+
+const liste = computed(() => photos.value?.member ?? [])
+const total = computed(() => photos.value?.totalItems ?? 0)
+const universDisponibles = computed(() => categories.value?.member ?? [])
+const resteAcharger = computed(() => total.value > liste.value.length)
 </script>
 
 <template>
-    <section class="jalon">
-        <p class="jalon__rubrique">Galerie</p>
-        <h1 class="jalon__titre">Toutes les séries</h1>
-
-        <dl class="sonde">
-            <div class="sonde__ligne">
-                <dt>Séries publiées</dt>
-                <dd>{{ albums?.totalItems ?? 0 }}</dd>
+    <div class="galerie">
+        <div class="galerie__tete">
+            <div>
+                <p class="section__kicker">Archive complète</p>
+                <h1 class="galerie__titre">Galerie</h1>
             </div>
-            <div class="sonde__ligne">
-                <dt>Photographies visibles</dt>
-                <dd>{{ photos?.totalItems ?? 0 }}</dd>
-            </div>
-            <div class="sonde__ligne">
-                <dt>Catégories</dt>
-                <dd>{{ categories?.member.map(categorie => categorie.name).join(', ') }}</dd>
-            </div>
-        </dl>
 
-        <ul class="sonde__series">
-            <li v-for="album in albums?.member" :key="album['@id']">
-                <img
-                    v-if="album.coverPhoto"
-                    :src="urlMedia(album.coverPhoto.contentUrl)"
-                    :alt="album.coverPhoto.alt"
-                    width="160"
-                    height="107"
-                >
-                <span>{{ album.category.name }} · {{ album.photoCount }} photos</span>
-                <strong>{{ album.title }}</strong>
-            </li>
-        </ul>
+            <GalerieBascule :actif="modeActif" />
+        </div>
 
-        <p class="jalon__note">
-            Sonde temporaire des composables d'API. Grille responsive à l'issue #20,
-            vue détail d'un album à l'issue #21.
+        <GalerieFiltres :categories="universDisponibles" :actif="categorieActive" />
+
+        <p class="galerie__compte" aria-live="polite">
+            {{ total }} {{ total > 1 ? 'photographies' : 'photographie' }}
         </p>
-    </section>
+
+        <div :class="modeActif === 'grille' ? 'grille' : 'mosaique'">
+            <AppCartePhoto
+                v-for="(photo, rang) in liste"
+                :key="photo['@id']"
+                :photo="photo"
+                :variante="modeActif"
+                :prioritaire="rang < 3"
+            />
+        </div>
+
+        <div v-if="resteAcharger" class="galerie__suite">
+            <button type="button" class="bouton bouton--or" @click="nombreDemande += TRANCHE">
+                Charger plus
+            </button>
+        </div>
+    </div>
 </template>
 
 <style scoped>
-.sonde {
-    margin: 40px 0 0;
-    border-top: 1px solid var(--bordure-tenue);
+.galerie {
+    padding: 40px var(--gouttiere) 80px;
 }
 
-.sonde__ligne {
+@media (min-width: 900px) {
+    .galerie {
+        padding: 52px var(--gouttiere) 100px;
+    }
+}
+
+.galerie__tete {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--bordure-tenue);
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 26px;
 }
 
-.sonde__ligne dt {
-    min-width: 220px;
+.galerie__titre {
+    font-size: clamp(56px, 6.5vw, 90px);
+    letter-spacing: -1.5px;
+}
+
+.galerie__compte {
+    margin: 22px 0 16px;
     color: var(--texte-tertiaire);
     font-family: var(--police-ui);
     font-size: 10px;
@@ -76,45 +108,54 @@ const { data: categories } = await useCategories()
     text-transform: uppercase;
 }
 
-.sonde__ligne dd {
-    margin: 0;
-    font-family: var(--police-ui);
-    font-size: 13px;
+/*
+ * Mosaïque en colonnes CSS : les tuiles gardent leurs proportions d'origine
+ * et se rangent d'elles-mêmes, sans mesure JavaScript ni saut de mise en page
+ * au chargement des images.
+ */
+.mosaique {
+    column-gap: 16px;
+    columns: 1;
 }
 
-.sonde__series {
+.mosaique > * {
+    margin-bottom: 16px;
+    break-inside: avoid;
+}
+
+@media (min-width: 600px) {
+    .mosaique {
+        columns: 2;
+    }
+}
+
+@media (min-width: 900px) {
+    .mosaique {
+        columns: 3;
+    }
+}
+
+.grille {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 600px) {
+    .grille {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .grille {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.galerie__suite {
     display: flex;
-    flex-wrap: wrap;
-    gap: 28px;
-    margin: 32px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.sonde__series li {
-    display: flex;
-    max-width: 200px;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.sonde__series img {
-    height: auto;
-    object-fit: cover;
-}
-
-.sonde__series span {
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-.sonde__series strong {
-    font-family: var(--police-titre);
-    font-size: 22px;
-    font-weight: 500;
-    line-height: 1.1;
+    justify-content: center;
+    margin-top: 40px;
 }
 </style>
