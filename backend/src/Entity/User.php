@@ -100,7 +100,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     /**
-     * Mot de passe haché — jamais exposé par l'API (cf. issue #6).
+     * Mot de passe haché, jamais exposé par l'API (cf. issue #6).
      */
     #[ORM\Column]
     private string $password = '';

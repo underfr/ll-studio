@@ -200,7 +200,7 @@ watch(() => route.fullPath, () => {
     flex-direction: column;
     gap: 4px;
     /* Le dessin ne fait que 22 × 14 px. Le padding porte la cible tactile à
-       44 × 44, seuil recommandé par le critère WCAG 2.5.5 — il est là pour
+       44 × 44, seuil recommandé par le critère WCAG 2.5.5. Il est là pour
        la main, pas pour l'œil. */
     padding: 15px 11px;
     /* Compense le padding horizontal pour que les barres restent alignées

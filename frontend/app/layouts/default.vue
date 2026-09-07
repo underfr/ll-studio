@@ -1,10 +1,9 @@
 <script setup lang="ts">
 /**
- * Gabarit du site public : en-tête collant puis contenu de la page.
+ * Gabarit du site public : en-tête collant, contenu de la page, pied de page.
  *
- * Les maquettes ne prévoient pas de pied de page — la dernière section de
- * chaque écran est un appel à l'action pleine largeur. Rien n'est donc rendu
- * après <main>.
+ * Le pied de page ne figure pas dans la maquette, qui s'arrête sur un appel à
+ * l'action pleine largeur ; il en reprend le registre graphique.
  */
 </script>
 
@@ -17,6 +16,8 @@
         <main id="contenu" tabindex="-1">
             <slot />
         </main>
+
+        <AppPiedDePage />
     </div>
 </template>
 

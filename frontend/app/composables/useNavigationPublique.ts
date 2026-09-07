@@ -23,7 +23,7 @@ export function useNavigationPublique() {
 
     /**
      * L'accueil ne s'active que sur une correspondance exacte ; les autres
-     * rubriques restent actives sur leurs sous-pages — /galerie doit rester
+     * rubriques restent actives sur leurs sous-pages : /galerie doit rester
      * surligné quand on consulte /galerie/aurores-boreales.
      */
     function estActif(chemin: string): boolean {

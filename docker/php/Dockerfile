@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ###############################################################################
-# base — PHP 8.4 FPM + extensions communes à tous les environnements
+# base : PHP 8.4 FPM + extensions communes à tous les environnements
 ###############################################################################
 FROM php:8.4-fpm-alpine AS base
 
@@ -27,7 +27,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1 \
 WORKDIR /app
 
 ###############################################################################
-# dev — sources montées en bind mount, dépendances installées au démarrage
+# dev : sources montées en bind mount, dépendances installées au démarrage
 ###############################################################################
 FROM base AS dev
 
@@ -44,7 +44,7 @@ ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
 
 ###############################################################################
-# prod — sources et dépendances figées dans l'image
+# prod : sources et dépendances figées dans l'image
 ###############################################################################
 FROM base AS prod
 
