@@ -47,6 +47,14 @@ final class AppFixtures extends Fixture
         private readonly Filesystem $filesystem,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
+        /*
+         * Le mot de passe du compte de démonstration vient de
+         * l'environnement. Il n'a rien à faire dans un fichier versionné d'un
+         * dépôt public, et ces fixtures ne s'exécutent de toute façon jamais
+         * en production : DoctrineFixturesBundle n'y est pas chargé.
+         */
+        #[Autowire('%env(FIXTURES_ADMIN_PASSWORD)%')]
+        private readonly string $adminPassword,
     ) {
     }
 
@@ -55,10 +63,10 @@ final class AppFixtures extends Fixture
         $this->copyPhotoFiles();
 
         $admin = UserFactory::new()->admin()->create([
-            'email' => 'loicklaurent28@gmail.com',
-            'firstName' => 'Loïck',
-            'lastName' => 'Laurent',
-            'password' => 'Temporaire123!',
+            'email' => 'admin@ll-studio.test',
+            'firstName' => 'Studio',
+            'lastName' => 'Administration',
+            'password' => $this->adminPassword,
         ]);
 
         /** @var array<string, Category> $categories */

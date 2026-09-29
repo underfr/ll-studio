@@ -33,6 +33,14 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+            # Sans cette limite, /api/login accepte un nombre illimité de
+            # tentatives sur un compte administrateur unique. Symfony compte
+            # séparément les essais par adresse IP et par identifiant visé,
+            # et répond 429 au-delà du seuil.
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
         # Échange un jeton de rafraîchissement encore valide contre un
         # nouveau couple de jetons, sans redemander le mot de passe.
         token_refresh:
