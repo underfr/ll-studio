@@ -135,6 +135,10 @@ class Category
 
     /**
      * Compteur affiché dans le back-office (« Nature · 51 photos »).
+     *
+     * Comme celui d'Album, il dépend de l'appelant : la collection est chargée
+     * déjà restreinte par VisibleContentFilter. Un visiteur anonyme ne voit
+     * donc plus un univers annonçant des photos qu'il ne peut pas ouvrir.
      */
     #[Groups(['category:read'])]
     public function getPhotoCount(): int

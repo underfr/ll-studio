@@ -13,6 +13,12 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+        filters:
+            # Désactivé par défaut, donc invisible en console : seules les
+            # requêtes HTTP l'activent, via VisibleContentFilterListener.
+            app_visible_content:
+                class: App\Doctrine\Filter\VisibleContentFilter
+                enabled: false
         mappings:
             App:
                 type: attribute

@@ -32,7 +32,15 @@ use Symfony\Component\Filesystem\Filesystem;
 final class AppFixtures extends Fixture
 {
     private const SOURCE_DIR = 'fixtures/photos';
-    private const HIDDEN_PHOTO = 8;
+    /**
+     * Photos laissées masquées. L'index 8 n'appartient à aucun album et est la
+     * seule photographie d'Astronomie : il couvre l'accès direct par
+     * identifiant et le compteur de catégorie. L'index 9 fait partie de la
+     * série « Puy du Fou 2024 » : il couvre la relation imbriquée et le
+     * compteur d'album. Sans ce second cas, la fuite corrigée à l'issue #45
+     * reste invisible en développement.
+     */
+    private const array HIDDEN_PHOTOS = [8, 9];
     private const TARGET_DIR = 'public/uploads/photos';
 
     public function __construct(
@@ -67,9 +75,10 @@ final class AppFixtures extends Fixture
                 'description' => $data['description'],
                 'alt' => $data['alt'],
                 'filePath' => \sprintf('img%02d.jpg', $index),
-                // Une photo reste masquée : elle sert à vérifier que le site
-                // public ne la voit pas, même en devinant son identifiant.
-                'visible' => self::HIDDEN_PHOTO !== $index,
+                // Deux photos restent masquées : elles servent à vérifier que
+                // le site public ne les voit ni en devinant leur identifiant,
+                // ni au travers de la série qui les contient.
+                'visible' => !\in_array($index, self::HIDDEN_PHOTOS, true),
                 'createdAt' => new \DateTimeImmutable($data['createdAt']),
                 'category' => $categories[$data['category']],
                 'owner' => $admin,
