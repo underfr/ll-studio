@@ -77,7 +77,7 @@ watch(() => route.fullPath, () => {
             </div>
         </div>
 
-        <AppMenuMobile id="menu-mobile" v-model:ouvert="menuOuvert" />
+        <AppMenuMobile v-model:ouvert="menuOuvert" />
     </header>
 </template>
 

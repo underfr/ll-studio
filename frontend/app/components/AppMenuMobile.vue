@@ -13,6 +13,9 @@ const { liens, estActif } = useNavigationPublique()
 const panneau = ref<HTMLElement | null>(null)
 const boutonFermer = ref<HTMLButtonElement | null>(null)
 
+/** Élément qui avait le focus avant l'ouverture, pour le lui rendre ensuite. */
+let origineDuFocus: HTMLElement | null = null
+
 function fermer(): void {
     ouvert.value = false
 }
@@ -66,8 +69,14 @@ watch(ouvert, async (estOuvert) => {
     document.body.style.overflow = estOuvert ? 'hidden' : ''
 
     if (estOuvert) {
+        origineDuFocus = document.activeElement as HTMLElement | null
         await nextTick()
         boutonFermer.value?.focus()
+    }
+    else {
+        // Sans ça, le focus repartirait en haut de page après la fermeture.
+        origineDuFocus?.focus()
+        origineDuFocus = null
     }
 })
 
@@ -85,7 +94,14 @@ onBeforeUnmount(() => {
                 <!-- Voile cliquable : fermer en touchant à côté est le geste attendu. -->
                 <div class="menu__voile" @click="fermer" />
 
+                <!--
+                    L'id est porté ici et non passé en attribut depuis l'en-tête :
+                    la racine du composant est un <Teleport>, qui n'est pas un
+                    élément du DOM, donc un attribut de repli n'atterrirait nulle
+                    part et l'aria-controls du bouton pointerait dans le vide.
+                -->
                 <div
+                    id="menu-mobile"
                     ref="panneau"
                     class="menu__panneau"
                     role="dialog"
