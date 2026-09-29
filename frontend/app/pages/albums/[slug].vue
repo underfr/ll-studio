@@ -16,9 +16,14 @@ const { data: photos } = await usePhotos(() => ({
 
 // Un slug inconnu doit répondre 404, pas une page vide.
 if (!album.value) {
+    const detail = "Cette série n'existe pas."
+
+    // `detail` est la phrase montrée au visiteur par app/error.vue ;
+    // `statusMessage` reste la formulation technique, côté journaux et HTTP.
     throw createError({
         statusCode: 404,
-        statusMessage: "Cette série n'existe pas.",
+        statusMessage: detail,
+        data: { detail },
         fatal: true,
     })
 }
