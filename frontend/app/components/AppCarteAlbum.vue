@@ -28,6 +28,7 @@ defineProps<{
         <span class="carte__legende">
             <span class="carte__categorie">
                 {{ album.category.name }} · {{ album.photoCount }}
+                {{ album.photoCount > 1 ? 'photos' : 'photo' }}
             </span>
             <span class="carte__titre">{{ album.title }}</span>
         </span>
