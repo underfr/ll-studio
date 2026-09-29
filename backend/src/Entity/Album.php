@@ -46,7 +46,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: "is_granted('PUBLIC_ACCESS')",
             openapi: new OpenApiOperation(
                 summary: 'Consulter une série',
-                description: "Embarque cette fois la liste complète des photos de la série, dans l'ordre d'ajout.",
+                description: "Embarque cette fois la liste des photos de la série visibles par l'appelant, dans l'ordre d'ajout.",
             ),
         ),
         new Post(
@@ -282,6 +282,12 @@ class Album
 
     /**
      * Nombre de photos affiché sous le titre de l'album (« 24 photos »).
+     *
+     * Le compteur reflète ce que l'appelant peut réellement consulter. Le corps
+     * n'a pas besoin de filtrer : la collection est chargée déjà restreinte par
+     * VisibleContentFilter, donc count() ne dénombre que le visible. Sans cette
+     * précision, un lecteur qui tombe sur `$this->photos->count()` conclurait
+     * que le compteur ment encore, ce qui était le cas avant l'issue #45.
      */
     #[Groups(['album:read'])]
     public function getPhotoCount(): int

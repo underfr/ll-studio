@@ -11,12 +11,12 @@ use ApiPlatform\Metadata\Operation;
 use App\Entity\Album;
 use App\Entity\Photo;
 use App\Entity\User;
-use App\Security\Role;
+use App\Security\ContentVisibility;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Bundle\SecurityBundle\Security;
 
 /**
- * Masque les photos et les albums non publiés aux visiteurs.
+ * Masque les photos et les albums non publiés aux visiteurs, sur la ressource
+ * demandée.
  *
  * Le drapeau `visible` ne doit pas seulement retirer un élément de la
  * galerie : sans ce filtre, GET /api/photos/{id} laisserait n'importe qui
@@ -24,12 +24,23 @@ use Symfony\Bundle\SecurityBundle\Security;
  *
  * L'administrateur voit tout ; un utilisateur authentifié voit en plus ses
  * propres contenus masqués, ce qui lui permet de les rééditer.
+ *
+ * Cette extension ne peut contraindre QUE l'alias racine que lui transmet le
+ * fournisseur d'API Platform. Les relations imbriquées, les jointures et les
+ * compteurs sont couverts par VisibleContentFilter, une couche plus bas.
+ *
+ * Les deux coexistent volontairement, et la condition se retrouve donc deux
+ * fois sur la racine. La raison n'est pas décorative : cette extension tourne
+ * dans le fournisseur, elle est garantie à chaque lecture de l'API, elle
+ * échoue fermée. Le filtre, lui, dépend d'un écouteur d'événement : s'il ne
+ * tournait pas, il échouerait ouvert. Les garder tous les deux plafonne donc
+ * le dégât d'un écouteur cassé au comportement d'avant l'issue #45.
  */
 final readonly class VisibleContentExtension implements QueryCollectionExtensionInterface, QueryItemExtensionInterface
 {
     private const array RESTRICTED = [Photo::class, Album::class];
 
-    public function __construct(private Security $security)
+    public function __construct(private ContentVisibility $visibility)
     {
     }
 
@@ -60,12 +71,12 @@ final readonly class VisibleContentExtension implements QueryCollectionExtension
             return;
         }
 
-        if ($this->security->isGranted(Role::ADMIN->value)) {
+        if ($this->visibility->seesEverything()) {
             return;
         }
 
         $alias = $queryBuilder->getRootAliases()[0];
-        $user = $this->security->getUser();
+        $user = $this->visibility->viewer();
 
         if ($user instanceof User) {
             $queryBuilder
