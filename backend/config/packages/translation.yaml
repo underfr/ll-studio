@@ -1,5 +1,9 @@
 framework:
-    default_locale: en
+    # Le site et son API s'adressent à un public francophone. Sans cette
+    # locale, les messages fournis par Symfony, dont celui du verrouillage de
+    # connexion, sortent en anglais alors que leur traduction française est
+    # livrée avec le composant de sécurité.
+    default_locale: fr
     translator:
         default_path: '%kernel.project_dir%/translations'
         providers:

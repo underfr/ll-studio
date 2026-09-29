@@ -110,7 +110,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * compte. Il n'est pas persisté : UserPasswordHasherProcessor le hache
      * puis vide cette propriété.
      */
-    #[ApiProperty(description: 'Mot de passe en clair. Écriture seule : il est haché puis oublié.', example: 'Temporaire123!')]
+    #[ApiProperty(description: 'Mot de passe en clair. Écriture seule : il est haché puis oublié.', example: 'ChangezCeMotDePasse!2026')]
     #[Groups(['user:write'])]
     #[Assert\NotBlank(groups: ['user:create'])]
     #[Assert\Length(min: 8, max: 4096)]
