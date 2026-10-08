@@ -1,0 +1,10 @@
+# Un seul générateur Faker pour tout le processus de test : voir
+# tests/Support/FakerPartage.php pour la raison.
+services:
+    app.tests.faker:
+        class: Faker\Generator
+        factory: ['App\Tests\Support\FakerPartage', 'instance']
+
+zenstruck_foundry:
+    faker:
+        service: app.tests.faker

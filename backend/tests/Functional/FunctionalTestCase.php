@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use ApiPlatform\Symfony\Bundle\Test\Client;
 use App\Entity\User;
+use App\Tests\Support\FakerPartage;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -37,6 +38,10 @@ abstract class FunctionalTestCase extends ApiTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // La base vient d'être remise à zéro : la mémoire d'unicité de Faker
+        // doit l'être aussi, sinon elle s'épuiserait au fil de la suite.
+        FakerPartage::instance()->unique(true);
 
         // Le limiteur de tentatives de connexion garde son état dans un cache
         // qui survit d'un test à l'autre : un test qui provoque des échecs
@@ -119,6 +124,24 @@ abstract class FunctionalTestCase extends ApiTestCase
     protected static function dossierEnvois(): string
     {
         return static::getContainer()->getParameter('kernel.project_dir').'/var/test/uploads/photos';
+    }
+
+    /**
+     * Messages de validation d'une réponse 422, regroupés par champ.
+     *
+     * @param array<string, mixed> $reponse
+     *
+     * @return array<string, list<string>>
+     */
+    protected static function violations(array $reponse): array
+    {
+        $parChamp = [];
+
+        foreach ($reponse['violations'] ?? [] as $violation) {
+            $parChamp[$violation['propertyPath']][] = $violation['message'];
+        }
+
+        return $parChamp;
     }
 
     /**

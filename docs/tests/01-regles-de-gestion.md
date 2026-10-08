@@ -128,7 +128,7 @@ Source : attributs `security` des `#[ApiResource]`, `ContentVoter`.
 | ID | Règle | Source |
 |---|---|---|
 | RG-MSG-01 | N'importe quel visiteur peut envoyer un message. C'est la seule opération publique de la ressource. | opération `Post` |
-| RG-MSG-02 | Nom obligatoire, 100 caractères au plus. Adresse e-mail obligatoire et valide, 180 au plus. Sujet obligatoire, 150 au plus. Message obligatoire, entre 10 et 5000 caractères. Messages : « Merci d'indiquer votre nom. », « Merci d'indiquer votre adresse e-mail. », « Cette adresse e-mail n'est pas valide. », « Merci d'indiquer un sujet. », « Le message ne peut pas être vide. » | `MessageContact` |
+| RG-MSG-02 | Nom obligatoire, 100 caractères au plus. Adresse e-mail obligatoire et valide, 180 au plus. Sujet obligatoire, 150 au plus. Message obligatoire, entre 10 et 5000 caractères. Messages : « Merci d’indiquer votre nom. », « Merci d’indiquer votre adresse e-mail. », « Cette adresse e-mail n’est pas valide. », « Merci d’indiquer un sujet. », « Le message ne peut pas être vide. » (avec l'apostrophe typographique de l'entité) | `MessageContact` |
 | RG-MSG-03 | Un message est enregistré non lu. Un visiteur ne peut pas l'envoyer déjà marqué lu. | `MessageContact::$read`, groupe `message:write` |
 | RG-MSG-04 | Seul le marqueur « lu » est modifiable : le contenu d'un message reçu ne peut pas être réécrit. | groupe `message:update` |
 | RG-MSG-05 | La collection est triée du plus récent au plus ancien, 25 éléments par page, filtrable par `read`. | `#[ApiResource]` de `MessageContact` |
