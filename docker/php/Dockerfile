@@ -34,6 +34,11 @@ FROM base AS dev
 ENV APP_ENV=dev \
     APP_DEBUG=1
 
+# Pilote de couverture de code pour PHPUnit, réservé au développement.
+# Il est installé désactivé (voir app.dev.ini) et ne s'active que pour une
+# mesure : php -d pcov.enabled=1 vendor/bin/phpunit --coverage-text
+RUN install-php-extensions pcov
+
 COPY docker/php/conf.d/app.ini      /usr/local/etc/php/conf.d/zz-app.ini
 COPY docker/php/conf.d/app.dev.ini  /usr/local/etc/php/conf.d/zz-app-dev.ini
 
