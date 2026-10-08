@@ -14,6 +14,10 @@
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />
         <server name="APP_ENV" value="test" force="true" />
+        <!-- Le conteneur PHP exporte APP_ENV=dev et PHP le range dans $_ENV,
+             que Symfony consulte avant $_SERVER : sans cette ligne, les tests
+             démarreraient le noyau en environnement de développement. -->
+        <env name="APP_ENV" value="test" force="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
     </php>
 

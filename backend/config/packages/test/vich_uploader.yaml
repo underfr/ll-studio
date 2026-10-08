@@ -1,0 +1,14 @@
+# En environnement de test, les fichiers envoyés atterrissent dans var/ et non
+# dans public/uploads/ : les tests d'envoi ne mélangent pas leurs fichiers aux
+# images de développement, et le dossier peut être vidé sans risque.
+#
+# Le préfixe d'URL est conservé : la forme de contentUrl fait partie de ce qui
+# est vérifié (RG-PHO-10).
+vich_uploader:
+    mappings:
+        photo_image:
+            upload_destination: '%kernel.project_dir%/var/test/uploads/photos'
+            uri_prefix: /uploads/photos
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+            delete_on_update: true
+            delete_on_remove: true
