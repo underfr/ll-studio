@@ -2,19 +2,21 @@
 import type { Photo } from '~/types/api'
 
 /**
- * Visionneuse plein écran.
+ * Visionneuse plein écran, sur la « modal » de daisyUI et l'élément natif
+ * <dialog> (issue #68).
  *
- * Elle ne figure dans aucune maquette : elle emprunte donc le vocabulaire du
- * reste du site, surtitre en or et Space Mono capitales espacées, titre en
- * Cormorant, commandes réduites à des traits fins. Le fond est nettement plus
- * sombre que le voile du menu mobile, pour que la photographie prime.
+ * Ouvert par showModal(), le dialogue passe au-dessus de tout, rend le reste
+ * de la page inerte, et daisyUI bloque le défilement. Le reste est écrit ici
+ * (RG-LBX) : navigation aux flèches qui boucle, préchargement des voisines,
+ * fermeture au clic hors de la photographie, focus gardé dans le dialogue et
+ * rendu à son point de départ.
  */
 const props = defineProps<{ photos: Photo[] }>()
 
 /** Index de la photographie affichée, null quand la visionneuse est fermée. */
 const index = defineModel<number | null>('index', { required: true })
 
-const panneau = ref<HTMLElement | null>(null)
+const dialogue = ref<HTMLDialogElement | null>(null)
 const boutonFermer = ref<HTMLButtonElement | null>(null)
 
 /** Élément qui avait le focus avant l'ouverture, pour le lui rendre ensuite. */
@@ -100,47 +102,32 @@ function surTouche(evenement: KeyboardEvent): void {
         return
     }
 
-    // Le focus reste captif : sans cela, Tab partirait sur la page masquée.
-    if (evenement.key !== 'Tab' || !panneau.value) {
-        return
-    }
-
-    const focusables = panneau.value.querySelectorAll<HTMLElement>('button:not([disabled])')
-
-    if (focusables.length === 0) {
-        return
-    }
-
-    const premier = focusables[0]!
-    const dernier = focusables[focusables.length - 1]!
-
-    if (evenement.shiftKey && document.activeElement === premier) {
-        evenement.preventDefault()
-        dernier.focus()
-    }
-    else if (!evenement.shiftKey && document.activeElement === dernier) {
-        evenement.preventDefault()
-        premier.focus()
-    }
+    // Le focus reste captif : le dialogue natif laisserait Tab partir vers
+    // l'interface du navigateur après la dernière commande.
+    piegerTabulation(evenement, dialogue.value)
 }
 
 onMounted(() => document.addEventListener('keydown', surTouche))
 
-onBeforeUnmount(() => {
-    document.removeEventListener('keydown', surTouche)
-    document.body.style.overflow = ''
-})
+onBeforeUnmount(() => document.removeEventListener('keydown', surTouche))
 
 watch(ouverte, async (estOuverte) => {
-    document.body.style.overflow = estOuverte ? 'hidden' : ''
-
     if (estOuverte) {
         origineDuFocus = document.activeElement as HTMLElement | null
         await nextTick()
+        // showModal n'existe pas dans tous les environnements de test.
+        if (typeof dialogue.value?.showModal === 'function' && !dialogue.value.open) {
+            dialogue.value.showModal()
+        }
         boutonFermer.value?.focus()
         prechargerVoisines()
     }
     else {
+        // Tant que le dialogue modal est ouvert, le reste de la page est
+        // inerte et ne peut pas recevoir le focus : on le ferme d'abord.
+        if (dialogue.value?.open) {
+            dialogue.value.close()
+        }
         origineDuFocus?.focus()
         origineDuFocus = null
     }
@@ -154,236 +141,102 @@ watch(index, () => {
 </script>
 
 <template>
-    <Teleport to="body">
-        <div
-            v-if="ouverte && photo"
-            ref="panneau"
-            class="visionneuse"
-            role="dialog"
-            aria-modal="true"
-            :aria-label="`Photographie : ${photo.title}`"
-            @click="surClic"
-        >
-            <div class="visionneuse__fond" />
-
-            <div class="visionneuse__barre">
-                <p class="visionneuse__compteur">
+    <!--
+        La touche Échap déclenche « cancel » sur un dialogue natif : on le
+        laisse passer par fermer(), pour que l'état et le focus suivent.
+    -->
+    <dialog
+        v-if="ouverte && photo"
+        ref="dialogue"
+        class="visionneuse modal bg-neutral/95"
+        aria-modal="true"
+        :aria-label="`Photographie : ${photo.title}`"
+        @cancel.prevent="fermer"
+        @click="surClic"
+    >
+        <div class="flex h-dvh w-screen flex-col">
+            <!--
+                Sur ce fond sombre, les états de survol, de focus et d'appui
+                sont redéfinis : ceux de daisyUI, pensés pour un fond clair,
+                posaient un aplat crème sous une icône claire.
+            -->
+            <div class="flex items-center justify-between px-5.5 py-4 bureau:px-10">
+                <p class="visionneuse__compteur font-mono text-[11px] tracking-[2px] text-neutral-content/60">
                     {{ (index ?? 0) + 1 }} / {{ photos.length }}
                 </p>
 
                 <button
                     ref="boutonFermer"
                     type="button"
-                    class="visionneuse__fermer"
+                    class="btn btn-circle btn-ghost text-neutral-content hover:bg-neutral-content/10 focus-visible:bg-neutral-content/10 active:bg-neutral-content/20"
                     aria-label="Fermer la visionneuse"
                     @click="fermer"
                 >
-                    &times;
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
                 </button>
             </div>
 
-            <figure class="visionneuse__scene">
+            <!--
+                À partir de 900 px, une marge horizontale est réservée aux
+                flèches, pour que la photographie ne passe jamais dessous.
+            -->
+            <figure class="m-0 flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-5.5 pb-2 bureau:px-26 bureau:pb-6">
+                <!--
+                    La boîte de l'image épouse l'image rendue, au lieu de
+                    s'étirer sur toute la scène : un clic juste à côté de la
+                    photographie ferme bien la visionneuse.
+                -->
                 <img
                     :key="photo['@id']"
-                    class="visionneuse__photo"
+                    class="visionneuse__photo h-auto max-h-full min-h-0 w-auto max-w-full rounded-box object-contain"
                     :src="urlMedia(photo.contentUrl)"
                     :alt="photo.alt"
                     decoding="async"
                 >
 
-                <figcaption class="visionneuse__legende">
-                    <p v-if="photo.category" class="visionneuse__categorie">
+                <figcaption class="visionneuse__legende flex max-w-[720px] flex-col gap-1.5 text-center">
+                    <p v-if="photo.category" class="visionneuse__categorie font-mono text-[10px] uppercase tracking-[3px] text-primary">
                         {{ photo.category.name }}
                     </p>
-                    <p class="visionneuse__titre">{{ photo.title }}</p>
-                    <p v-if="photo.description" class="visionneuse__description">
+                    <p class="font-display text-[clamp(24px,3vw,34px)] font-medium leading-tight text-neutral-content">
+                        {{ photo.title }}
+                    </p>
+                    <p v-if="photo.description" class="visionneuse__description text-sm leading-relaxed text-neutral-content/70">
                         {{ photo.description }}
                     </p>
                 </figcaption>
             </figure>
 
-            <div v-if="plusieurs" class="visionneuse__commandes">
+            <!--
+                Sur mobile les flèches se rangent sous la légende : posées sur
+                les côtés, elles empiéteraient sur une photographie qui occupe
+                déjà toute la largeur. À partir de 900 px, elles reprennent
+                leur place latérale ; « contents » efface la boîte du groupe.
+            -->
+            <div v-if="plusieurs" class="flex justify-center gap-4.5 pb-6.5 bureau:contents">
                 <button
                     type="button"
-                    class="visionneuse__nav visionneuse__nav--precedent"
+                    class="btn btn-circle btn-outline btn-lg border-neutral-content/30 text-neutral-content hover:border-neutral-content hover:bg-neutral-content/10 focus-visible:border-neutral-content focus-visible:bg-neutral-content/10 active:bg-neutral-content/20 bureau:absolute bureau:top-1/2 bureau:left-6 bureau:-translate-y-1/2"
                     aria-label="Photographie précédente"
                     @click="deplacer(-1)"
                 >
-                    &#8592;
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6" />
+                    </svg>
                 </button>
                 <button
                     type="button"
-                    class="visionneuse__nav visionneuse__nav--suivant"
+                    class="btn btn-circle btn-outline btn-lg border-neutral-content/30 text-neutral-content hover:border-neutral-content hover:bg-neutral-content/10 focus-visible:border-neutral-content focus-visible:bg-neutral-content/10 active:bg-neutral-content/20 bureau:absolute bureau:top-1/2 bureau:right-6 bureau:-translate-y-1/2"
                     aria-label="Photographie suivante"
                     @click="deplacer(1)"
                 >
-                    &#8594;
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                    </svg>
                 </button>
             </div>
         </div>
-    </Teleport>
+    </dialog>
 </template>
-
-<style scoped>
-.visionneuse {
-    position: fixed;
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    inset: 0;
-}
-
-.visionneuse__fond {
-    position: absolute;
-    inset: 0;
-    background-color: var(--scrim-visionneuse);
-}
-
-.visionneuse__barre {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px var(--gouttiere);
-}
-
-.visionneuse__compteur {
-    color: rgb(244 240 232 / 55%);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 2px;
-}
-
-.visionneuse__fermer {
-    padding: 0 6px;
-    border: 0;
-    background: none;
-    color: var(--texte-sur-sombre);
-    cursor: pointer;
-    font-family: var(--police-texte);
-    font-size: 30px;
-    line-height: 1;
-}
-
-.visionneuse__scene {
-    position: relative;
-    display: flex;
-    min-height: 0;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    margin: 0;
-    padding: 0 var(--gouttiere) 8px;
-}
-
-@media (min-width: 900px) {
-    /*
-     * Marge horizontale réservée aux flèches, pour que la photographie ne
-     * passe jamais dessous.
-     */
-    .visionneuse__scene {
-        padding: 0 104px 24px;
-    }
-}
-
-/*
- * La boîte de l'image épouse l'image rendue, au lieu de s'étirer sur toute la
- * scène avec un object-fit qui laisserait des marges transparentes cliquables.
- * C'est ce qui permet de fermer en cliquant juste à côté de la photographie.
- */
-.visionneuse__photo {
-    min-height: 0;
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-}
-
-.visionneuse__legende {
-    display: flex;
-    max-width: 720px;
-    flex-direction: column;
-    gap: 6px;
-    text-align: center;
-}
-
-.visionneuse__categorie {
-    color: var(--or-remplissage);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
-
-.visionneuse__titre {
-    color: var(--texte-sur-sombre);
-    font-family: var(--police-titre);
-    font-size: clamp(24px, 3vw, 34px);
-    font-weight: 500;
-    line-height: 1.1;
-}
-
-.visionneuse__description {
-    color: rgb(244 240 232 / 72%);
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-/*
- * Sur mobile les flèches se rangent sous la légende : posées sur les côtés,
- * elles empiéteraient sur une photographie qui occupe déjà toute la largeur.
- * À partir de 900 px, la place existe et elles reprennent leur position
- * latérale, dans la marge réservée par la scène.
- */
-.visionneuse__commandes {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    padding-bottom: 26px;
-}
-
-.visionneuse__nav {
-    display: flex;
-    width: 48px;
-    height: 48px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgb(244 240 232 / 30%);
-    background: none;
-    color: var(--texte-sur-sombre);
-    cursor: pointer;
-    font-size: 20px;
-    transition: border-color var(--transition-courte), background-color var(--transition-courte);
-}
-
-.visionneuse__nav:hover {
-    border-color: var(--texte-sur-sombre);
-    background-color: rgb(244 240 232 / 12%);
-}
-
-@media (min-width: 900px) {
-    /* display: contents efface la boîte du groupe : les boutons se
-       positionnent alors par rapport à la visionneuse elle-même. */
-    .visionneuse__commandes {
-        display: contents;
-    }
-
-    .visionneuse__nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .visionneuse__nav--precedent {
-        left: 24px;
-    }
-
-    .visionneuse__nav--suivant {
-        right: 24px;
-    }
-}
-</style>
