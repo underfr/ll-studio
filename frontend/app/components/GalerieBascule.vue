@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Bascule entre les deux modes d'affichage de la galerie.
+ * Bascule entre les deux modes d'affichage de la galerie, sur le « join » de
+ * daisyUI.
  *
  * Comme les filtres, le mode vit dans l'URL : un lien vers la galerie en
  * grille reste un lien partageable.
@@ -26,21 +27,21 @@ function versMode(mode: ModeAffichage) {
 </script>
 
 <template>
-    <div class="bascule">
-        <span class="bascule__intitule">Affichage</span>
+    <div class="bascule flex items-center gap-2.5">
+        <span id="intitule-affichage" class="font-mono text-[10px] uppercase tracking-[2px] text-base-content/60">Affichage</span>
 
-        <div class="bascule__groupe">
+        <div class="join" role="group" aria-labelledby="intitule-affichage">
             <NuxtLink
-                class="bascule__option"
-                :class="{ 'bascule__option--actif': actif === 'mosaique' }"
+                class="btn btn-sm join-item font-mono"
+                :class="actif === 'mosaique' ? 'btn-primary' : 'btn-outline'"
                 :to="versMode('mosaique')"
                 :aria-current="actif === 'mosaique' ? 'true' : undefined"
             >
                 Mosaïque
             </NuxtLink>
             <NuxtLink
-                class="bascule__option"
-                :class="{ 'bascule__option--actif': actif === 'grille' }"
+                class="btn btn-sm join-item font-mono"
+                :class="actif === 'grille' ? 'btn-primary' : 'btn-outline'"
                 :to="versMode('grille')"
                 :aria-current="actif === 'grille' ? 'true' : undefined"
             >
@@ -49,44 +50,3 @@ function versMode(mode: ModeAffichage) {
         </div>
     </div>
 </template>
-
-<style scoped>
-.bascule {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.bascule__intitule {
-    color: rgb(18 16 12 / 40%);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-.bascule__groupe {
-    display: flex;
-    overflow: hidden;
-    border: 1px solid rgb(18 16 12 / 18%);
-    border-radius: 2px;
-}
-
-.bascule__option {
-    padding: 9px 16px;
-    color: var(--texte-principal);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 1px;
-    transition: background-color var(--transition-courte);
-}
-
-.bascule__option:hover {
-    background-color: var(--voile-leger);
-}
-
-.bascule__option--actif,
-.bascule__option--actif:hover {
-    background-color: var(--or-remplissage);
-}
-</style>

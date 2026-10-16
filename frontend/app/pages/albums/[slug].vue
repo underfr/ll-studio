@@ -54,37 +54,46 @@ useHead(() => ({
 
 <template>
     <article v-if="album">
-        <header class="couverture">
+        <header class="couverture hero relative min-h-[380px] items-end justify-items-start overflow-hidden bg-neutral bureau:min-h-[470px]">
             <img
                 v-if="couverture"
-                class="couverture__photo"
+                class="couverture__photo absolute inset-0 size-full object-cover"
                 :src="urlMedia(couverture.contentUrl)"
                 :alt="couverture.alt"
                 fetchpriority="high"
                 decoding="async"
             >
-            <div class="couverture__voile" />
+            <div class="absolute inset-0 bg-linear-to-b from-neutral/40 to-neutral/90" />
 
-            <div class="couverture__copy">
-                <NuxtLink to="/albums" class="couverture__retour">← Retour aux albums</NuxtLink>
+            <div class="hero-content relative w-full max-w-none flex-col items-start gap-4 px-5.5 pb-9 bureau:px-10 bureau:pb-11">
+                <NuxtLink
+                    to="/albums"
+                    class="link link-hover font-mono text-[11px] uppercase tracking-[2px] text-neutral-content/80 hover:text-neutral-content"
+                >
+                    ← Retour aux albums
+                </NuxtLink>
 
-                <div class="couverture__meta">
-                    <p class="couverture__categorie">
+                <div class="flex flex-col gap-2">
+                    <p class="font-mono text-[11px] uppercase tracking-[4px] text-primary">
                         {{ album.category.name }} · {{ nombrePhotos }}
                         {{ nombrePhotos > 1 ? 'photos' : 'photo' }}
                     </p>
 
-                    <h1 class="couverture__titre">{{ album.title }}</h1>
+                    <h1 class="font-display text-[clamp(44px,7.2vw,104px)] font-semibold leading-[0.95] tracking-[-2px] text-neutral-content">
+                        {{ album.title }}
+                    </h1>
 
-                    <p v-if="album.description" class="couverture__description">
+                    <p v-if="album.description" class="max-w-[560px] text-[clamp(15px,1.1vw,16px)] leading-relaxed text-neutral-content/85">
                         {{ album.description }}
                     </p>
                 </div>
             </div>
         </header>
 
-        <div class="serie">
-            <div v-if="liste.length" class="serie__mosaique">
+        <div class="px-5.5 pt-10 pb-20 bureau:px-10 bureau:pt-13 bureau:pb-25">
+            <!-- Même mosaïque que la galerie, sans légende : la couverture a
+                 déjà annoncé la catégorie et le titre de la série. -->
+            <div v-if="liste.length" class="columns-1 gap-3.5 *:mb-3.5 *:break-inside-avoid tablette:columns-2 bureau:columns-3">
                 <AppCartePhoto
                     v-for="(photo, rang) in liste"
                     :key="photo['@id']"
@@ -96,7 +105,7 @@ useHead(() => ({
                 />
             </div>
 
-            <p v-else class="serie__vide">
+            <p v-else class="serie__vide alert">
                 Cette série ne contient encore aucune photographie publiée.
             </p>
 
@@ -104,133 +113,3 @@ useHead(() => ({
         </div>
     </article>
 </template>
-
-<style scoped>
-.couverture {
-    position: relative;
-    display: flex;
-    min-height: 380px;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 0 var(--gouttiere) 36px;
-    overflow: hidden;
-    background-color: var(--texte-principal);
-}
-
-@media (min-width: 900px) {
-    .couverture {
-        min-height: 470px;
-        padding-bottom: 44px;
-    }
-}
-
-.couverture__photo {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    inset: 0;
-    object-fit: cover;
-}
-
-.couverture__voile {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to bottom,
-        rgb(18 16 12 / 40%) 0%,
-        rgb(18 16 12 / 90%) 100%
-    );
-}
-
-.couverture__copy {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.couverture__retour {
-    color: rgb(244 240 232 / 82%);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transition: color var(--transition-courte);
-}
-
-.couverture__retour:hover {
-    color: var(--texte-sur-sombre);
-}
-
-.couverture__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.couverture__categorie {
-    color: var(--or-remplissage);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-}
-
-.couverture__titre {
-    color: var(--texte-sur-sombre);
-    font-size: clamp(44px, 7.2vw, 104px);
-    font-weight: 600;
-    letter-spacing: -2px;
-    line-height: 0.95;
-}
-
-.couverture__description {
-    max-width: 560px;
-    color: rgb(244 240 232 / 86%);
-    font-size: clamp(15px, 1.1vw, 16px);
-    line-height: 1.6;
-}
-
-.serie {
-    padding: 40px var(--gouttiere) 80px;
-}
-
-@media (min-width: 900px) {
-    .serie {
-        padding: 52px var(--gouttiere) 100px;
-    }
-}
-
-/*
- * Même mosaïque que la galerie, sans légende : la couverture a déjà annoncé
- * la catégorie et le titre de la série.
- */
-.serie__mosaique {
-    column-gap: 14px;
-    columns: 1;
-}
-
-.serie__mosaique > * {
-    margin-bottom: 14px;
-    break-inside: avoid;
-}
-
-@media (min-width: 600px) {
-    .serie__mosaique {
-        columns: 2;
-    }
-}
-
-@media (min-width: 900px) {
-    .serie__mosaique {
-        columns: 3;
-    }
-}
-
-.serie__vide {
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: 12px;
-    letter-spacing: 1px;
-}
-</style>

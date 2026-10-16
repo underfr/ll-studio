@@ -9,8 +9,9 @@
  * au clavier) tant qu'il est fermé, voile, défilement de la page bloqué
  * pendant l'ouverture. Ce qu'il ne fait pas est ajouté ici : un vrai bouton
  * à la place de son <label>, que le clavier n'atteint pas, le focus placé à
- * l'ouverture, Échap pour fermer et le focus rendu au bouton, le reste de la
- * page rendu inerte tant que le panneau couvre l'écran.
+ * l'ouverture et gardé dans le panneau, Échap pour fermer et le focus rendu
+ * au bouton, le reste de la page rendu inerte tant que le panneau couvre
+ * l'écran.
  */
 const { liens, estActif } = useNavigationAdmin()
 const { compte, deconnecter } = useSession()
@@ -20,6 +21,7 @@ const menuOuvert = ref(false)
 const deconnexionEnCours = ref(false)
 const boutonMenu = ref<HTMLButtonElement | null>(null)
 const boutonFermer = ref<HTMLButtonElement | null>(null)
+const panneau = ref<HTMLElement | null>(null)
 
 useHead({
     titleTemplate: titre => (titre ? `${titre} · Administration LL Studio` : 'Administration LL Studio'),
@@ -43,26 +45,6 @@ async function fermerMenu(rendreLeFocus = true): Promise<void> {
     }
 }
 
-/**
- * Place le focus sur un élément dès qu'il devient visible. daisyUI ne rend
- * le panneau visible qu'après un court délai de transition : un focus donné
- * plus tôt viserait un élément encore masqué et resterait sans effet.
- */
-function focaliserQuandVisible(element: HTMLElement | null, essais = 30): void {
-    if (!element || essais === 0) {
-        return
-    }
-
-    // Sans checkVisibility (navigateurs anciens), on tente le focus aussitôt.
-    if (typeof element.checkVisibility !== 'function' || element.checkVisibility({ visibilityProperty: true })) {
-        element.focus()
-
-        return
-    }
-
-    requestAnimationFrame(() => focaliserQuandVisible(element, essais - 1))
-}
-
 watch(menuOuvert, async (ouvert) => {
     if (ouvert) {
         await nextTick()
@@ -76,10 +58,18 @@ watch(menuOuvert, async (ouvert) => {
 watch(() => route.fullPath, () => fermerMenu(false))
 
 function surTouche(evenement: KeyboardEvent): void {
-    if (evenement.key === 'Escape' && menuOuvert.value) {
+    if (!menuOuvert.value) {
+        return
+    }
+
+    if (evenement.key === 'Escape') {
         evenement.preventDefault()
         fermerMenu()
+
+        return
     }
+
+    piegerTabulation(evenement, panneau.value)
 }
 
 /*
@@ -161,6 +151,7 @@ async function seDeconnecter(): Promise<void> {
 
             <aside
                 id="panneau-admin"
+                ref="panneau"
                 class="barre flex min-h-full w-72 flex-col gap-8 border-r border-base-300 bg-base-200 p-5"
                 aria-label="Menu de l'administration"
             >

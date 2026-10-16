@@ -2,148 +2,58 @@
 import type { Photo } from '~/types/api'
 
 /**
- * Bandeau d'ouverture. La photographie de fond est la plus récente publiée :
- * l'accueil se renouvelle donc à chaque ajout, sans intervention.
+ * Bandeau d'ouverture, sur le « hero » de daisyUI. La photographie de fond
+ * est la plus récente publiée : l'accueil se renouvelle à chaque ajout, sans
+ * intervention.
  */
 defineProps<{ photo?: Photo }>()
 </script>
 
 <template>
-    <section class="ouverture">
+    <section class="ouverture hero relative min-h-[660px] items-end justify-items-start overflow-hidden bg-neutral bureau:min-h-[820px]">
         <img
             v-if="photo"
-            class="ouverture__photo"
+            class="ouverture__photo absolute inset-0 size-full object-cover"
             :src="urlMedia(photo.contentUrl)"
             :alt="photo.alt"
             fetchpriority="high"
             decoding="async"
         >
-        <div class="ouverture__voile" />
 
-        <div class="ouverture__copy">
-            <p class="ouverture__kicker">Photographe · Multimédia</p>
+        <!--
+            Le voile diffère entre les deux maquettes : sur mobile le texte
+            occupe une plus grande part de l'image, le dégradé y est donc plus
+            dense en bas. La photographie vient de l'API et peut être très
+            lumineuse : le contraste réel sera mesuré par l'audit (#33).
+        -->
+        <div
+            class="ouverture__voile absolute inset-0 bg-linear-to-b from-neutral/40 via-neutral/0 via-40% to-neutral/90 bureau:from-neutral/55 bureau:via-neutral/5 bureau:via-35% bureau:to-neutral/85"
+        />
 
-            <h1 class="ouverture__titre">La lumière raconte ce que les mots taisent.</h1>
+        <div class="ouverture__copy hero-content relative w-full max-w-none flex-col items-start justify-end px-5.5 pb-10 bureau:px-10 bureau:pb-14">
+            <p class="font-mono text-[clamp(10px,1vw,12px)] uppercase tracking-[clamp(3px,0.4vw,5px)] text-primary">
+                Photographe · Multimédia
+            </p>
 
-            <p class="ouverture__accroche">
+            <h1 class="max-w-[14ch] font-display text-[clamp(52px,8vw,115px)] font-semibold leading-[0.93] tracking-[-2px] text-neutral-content">
+                La lumière raconte ce que les mots taisent.
+            </h1>
+
+            <p class="max-w-[520px] text-[clamp(15px,1.2vw,17px)] leading-relaxed text-neutral-content/90">
                 Nature, spectacle, espace, automobile, événements : je capture l'instant
                 où la scène bascule dans le sublime.
             </p>
 
-            <div class="ouverture__actions">
-                <NuxtLink to="/galerie" class="bouton bouton--or">Voir la galerie</NuxtLink>
-                <NuxtLink to="/contact" class="bouton bouton--contour">Me réserver</NuxtLink>
+            <!-- Sur mobile la maquette empile les boutons pleine largeur. -->
+            <div class="mt-1.5 flex w-full flex-col gap-3.5 tablette:w-auto tablette:flex-row">
+                <NuxtLink to="/galerie" class="btn btn-primary">Voir la galerie</NuxtLink>
+                <NuxtLink
+                    to="/contact"
+                    class="btn btn-outline border-neutral-content/50 text-neutral-content hover:border-neutral-content hover:bg-neutral-content/10 focus-visible:border-neutral-content focus-visible:bg-neutral-content/10 active:bg-neutral-content/20"
+                >
+                    Me réserver
+                </NuxtLink>
             </div>
         </div>
     </section>
 </template>
-
-<style scoped>
-.ouverture {
-    position: relative;
-    display: flex;
-    min-height: 660px;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 0 var(--gouttiere) 40px;
-    overflow: hidden;
-    background-color: var(--texte-principal);
-}
-
-@media (min-width: 900px) {
-    .ouverture {
-        min-height: 820px;
-        padding-bottom: 56px;
-    }
-}
-
-.ouverture__photo {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    inset: 0;
-    object-fit: cover;
-}
-
-/*
- * Le dégradé diffère entre les deux maquettes : sur mobile le texte occupe
- * une plus grande part de l'image, le voile y est donc plus dense en bas.
- *
- * Réserve : la maquette suppose une photo de couverture sombre, alors que
- * celle-ci vient de l'API et peut être très lumineuse. Le surtitre en or à
- * 10 px devient alors difficile à lire. Le contraste réel est à mesurer et à
- * corriger dans l'audit d'accessibilité (issue #33), probablement par un
- * voile local sous le bloc de texte.
- */
-.ouverture__voile {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to bottom,
-        rgb(18 16 12 / 40%) 0%,
-        rgb(18 16 12 / 0%) 40%,
-        rgb(18 16 12 / 92%) 100%
-    );
-}
-
-@media (min-width: 900px) {
-    .ouverture__voile {
-        background: linear-gradient(
-            to bottom,
-            rgb(18 16 12 / 55%) 0%,
-            rgb(18 16 12 / 5%) 35%,
-            rgb(18 16 12 / 85%) 100%
-        );
-    }
-}
-
-.ouverture__copy {
-    position: relative;
-    display: flex;
-    max-width: 1100px;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.ouverture__kicker {
-    color: var(--or-remplissage);
-    font-family: var(--police-ui);
-    font-size: clamp(10px, 1vw, 12px);
-    letter-spacing: clamp(3px, 0.4vw, 5px);
-    text-transform: uppercase;
-}
-
-.ouverture__titre {
-    max-width: 14ch;
-    color: var(--texte-sur-sombre);
-    font-size: clamp(52px, 8vw, 115px);
-    font-weight: 600;
-    letter-spacing: -2px;
-    line-height: 0.93;
-}
-
-.ouverture__accroche {
-    max-width: 520px;
-    color: rgb(244 240 232 / 92%);
-    font-size: clamp(15px, 1.2vw, 17px);
-    line-height: 1.55;
-}
-
-.ouverture__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-top: 6px;
-}
-
-/* Sur mobile la maquette empile un seul bouton pleine largeur. */
-@media (max-width: 599px) {
-    .ouverture__actions {
-        flex-direction: column;
-    }
-
-    .ouverture__actions :deep(.bouton) {
-        justify-content: center;
-    }
-}
-</style>

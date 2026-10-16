@@ -22,10 +22,10 @@ const universDisponibles = computed(() => categories.value?.member ?? [])
 </script>
 
 <template>
-    <div class="albums">
-        <div class="albums__tete">
-            <p class="section__kicker">Séries photographiques</p>
-            <h1 class="albums__titre">Albums</h1>
+    <div class="albums px-5.5 pt-10 pb-20 bureau:px-10 bureau:pt-13 bureau:pb-25">
+        <div class="mb-6.5">
+            <p class="surtitre">Séries photographiques</p>
+            <h1 class="font-display text-[clamp(56px,6.5vw,90px)] tracking-[-1.5px]">Albums</h1>
         </div>
 
         <AppFiltresCategories
@@ -34,11 +34,18 @@ const universDisponibles = computed(() => categories.value?.member ?? [])
             base="/albums"
         />
 
-        <p class="albums__compte" aria-live="polite">
+        <p class="albums__compte mt-5.5 mb-4 font-mono text-[10px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
             {{ total }} {{ total > 1 ? 'séries' : 'série' }}
         </p>
 
-        <div v-if="series.length" class="albums__grille">
+        <!--
+            auto-fill et non auto-fit, comme sur l'accueil : deux séries seules
+            gardent la taille de carte prévue au lieu de s'étirer.
+        -->
+        <div
+            v-if="series.length"
+            class="albums__grille grid gap-3.5 tablette:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] tablette:gap-5"
+        >
             <AppCarteAlbum
                 v-for="(album, rang) in series"
                 :key="album['@id']"
@@ -47,62 +54,8 @@ const universDisponibles = computed(() => categories.value?.member ?? [])
             />
         </div>
 
-        <p v-else class="albums__vide">
+        <p v-else class="albums__vide alert">
             Aucune série publiée dans cette catégorie pour le moment.
         </p>
     </div>
 </template>
-
-<style scoped>
-.albums {
-    padding: 40px var(--gouttiere) 80px;
-}
-
-@media (min-width: 900px) {
-    .albums {
-        padding: 52px var(--gouttiere) 100px;
-    }
-}
-
-.albums__tete {
-    margin-bottom: 26px;
-}
-
-.albums__titre {
-    font-size: clamp(56px, 6.5vw, 90px);
-    letter-spacing: -1.5px;
-}
-
-.albums__compte {
-    margin: 22px 0 16px;
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-.albums__grille {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: 1fr;
-}
-
-@media (min-width: 600px) {
-    .albums__grille {
-        gap: 20px;
-        /*
-         * auto-fill et non auto-fit, comme sur l'accueil : deux séries seules
-         * gardent la taille de carte prévue au lieu de s'étirer.
-         */
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    }
-}
-
-.albums__vide {
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: 12px;
-    letter-spacing: 1px;
-}
-</style>
