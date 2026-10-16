@@ -43,12 +43,19 @@ security:
 
         # Échange un jeton de rafraîchissement encore valide contre un
         # nouveau couple de jetons, sans redemander le mot de passe.
+        #
+        # La déconnexion est portée par ce pare-feu et non par « api » : le
+        # bundle n'attache son écouteur, qui supprime le jeton de la base et
+        # efface le cookie, qu'au pare-feu qui déclare refresh_jwt. Elle
+        # fonctionne sans jeton d'accès, déjà expiré dans le cas courant.
         token_refresh:
-            pattern: ^/api/token/refresh$
+            pattern: ^/api/token/(refresh|invalidate)$
             stateless: true
             provider: app_user_provider
             refresh_jwt:
                 check_path: /api/token/refresh
+            logout:
+                path: api_token_invalidate
 
         # L'API est sans état : aucune session, le porteur du jeton est
         # identifié à chaque requête par l'en-tête Authorization.
@@ -67,7 +74,7 @@ security:
     # galerie publique lisible sans jeton.
     access_control:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
+        - { path: ^/api/token/, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: PUBLIC_ACCESS }
 
