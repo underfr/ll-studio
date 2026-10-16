@@ -6,9 +6,9 @@ Il recouvre les issues #31 (tests API), #32 (tests front) et fournit la trame du
 
 ## 1. Périmètre
 
-**Inclus** : l'API Symfony telle qu'elle existe aujourd'hui, et le site public Nuxt (accueil, galerie, albums, page d'une série, visionneuse, navigation, pages d'erreur).
+**Inclus** : l'API Symfony telle qu'elle existe aujourd'hui, le site public Nuxt (accueil, galerie, albums, page d'une série, visionneuse, navigation, pages d'erreur) et, depuis l'itération 7, l'accès au back-office : écran de connexion, session, garde, gabarit d'administration et commande de création de l'administrateur.
 
-**Exclus**, faute d'exister encore : le back-office (#25 à #30), le formulaire de contact (#41), les mentions légales (#43). Les écrans `/contact` et `/admin` sont des pages d'attente et ne sont pas testés. Les audits d'accessibilité (#33) et de performance (#35) restent des chantiers à part.
+**Exclus**, faute d'exister encore : les écrans de gestion du back-office (#27 à #30, #42), le formulaire de contact (#41), les mentions légales (#43). L'écran `/contact` et les rubriques `/admin/photos`, `/admin/albums`, `/admin/categories` et `/admin/messages` sont des pages d'attente dont le contenu n'est pas testé. Les audits d'accessibilité (#33) et de performance (#35) restent des chantiers à part.
 
 ## 2. Organisation de la branche `tests`
 
@@ -114,7 +114,8 @@ Règles d'écriture propres à Cypress :
   backend/tests/
     Unit/            Entity, Security, Doctrine, EventListener, State
     Functional/Api/  Visibilite, Authentification, Droits, Photo, Album,
-                     Categorie, Message, Compte
+                     Categorie, Message, Compte, Transverse
+    Functional/Command/  CreerAdminCommand
     fixtures/images/
   frontend/tests/
     unit/
@@ -145,6 +146,7 @@ Règles d'écriture propres à Cypress :
 | CT-UB-12 | RG-DRT-06 | `PhotoUploadProcessor` avec un compte connecté | auteur égal au compte connecté | P0 |
 | CT-UB-13 | RG-PHO-14 | `Photo::setImageFile()` avec un fichier | date de modification renseignée | P2 |
 | CT-UB-14 | RG-ALB-02, RG-CAT-02 | expression du slug sur `puy-du-fou-2024`, `nogaro`, `2024`, `Puy`, `a b`, `-a`, `a-`, `a--b`, `été` | seules les trois premières valeurs sont acceptées | P1 |
+| CT-UB-15 | RG-AUTH-13 | `CurrentUserProvider` avec un compte connecté, sans compte, puis avec un utilisateur qui n'est pas une entité `User` | le compte ; refus dans les deux autres cas, jamais `null` | P0 |
 
 ### 7.2 Fonctionnels API (CT-FB)
 
@@ -167,22 +169,26 @@ Règles d'écriture propres à Cypress :
 
 | ID | Règles | Scénario | Résultat attendu |
 |---|---|---|---|
-| CT-FB-11 | RG-AUTH-01 | Connexion valide | 200, `token` et `refresh_token` |
+| CT-FB-11 | RG-AUTH-01 | Connexion valide | 200, `token` dans le corps, cookie `refresh_token` posé |
 | CT-FB-12 | RG-AUTH-05, RG-AUTH-08 | Mauvais mot de passe, puis adresse inconnue | deux 401 identiques, « Identifiants invalides. » |
 | CT-FB-13 | RG-AUTH-06 | Six échecs sur le même identifiant | cinq 401 puis un 429, `Retry-After: 900`, message en français |
 | CT-FB-14 | RG-AUTH-06 | Après verrouillage, bon mot de passe | toujours 429 |
 | CT-FB-15 | RG-AUTH-07 | Après verrouillage du compte A, connexion du compte B | 200 |
-| CT-FB-16 | RG-AUTH-03 | Rafraîchissement, puis réemploi de l'ancien jeton de rafraîchissement | 200 avec un nouveau couple ; puis 401 |
+| CT-FB-16 | RG-AUTH-03 | Rafraîchissement par le seul cookie, sans corps, puis réemploi de l'ancien jeton de rafraîchissement | 200, nouveau jeton d'accès et cookie renouvelé ; puis 401 |
 | CT-FB-17 | RG-AUTH-04 | Six connexions successives du même compte | au plus 5 jetons de rafraîchissement actifs ; le sort du plus ancien est à constater |
 | CT-FB-18 | RG-AUTH-02 | Jeton d'accès expiré | 401 |
 | CT-FB-19 | RG-AUTH-10 | Jeton dont la signature a été altérée | 401 |
 | CT-FB-20 | RG-AUTH-09 | `GET`, `POST` et `PATCH` sur `/api/users` | aucune réponse ne contient `password` ni `plainPassword` |
+| CT-FB-26 | RG-AUTH-11 | Connexion valide, examen de la réponse | pas de `refresh_token` dans le corps ; cookie `HttpOnly`, `SameSite=Strict`, chemin `/api/token`, sans `Secure` en test |
+| CT-FB-27 | RG-AUTH-12 | Déconnexion avec le cookie, puis rafraîchissement avec l'ancien jeton ; déconnexion sans cookie ; `GET` sur la déconnexion | 200 et cookie effacé, puis 401 ; 400 ; 405 |
+| CT-FB-28 | RG-AUTH-13 | `GET /api/me` par un admin, par un compte, puis sans jeton | 200 avec l'IRI `/api/users/<id>` et les rôles ; 200 sous sa propre IRI, sans `roles` ; 401 |
+| CT-FB-29 | RG-AUTH-14 | Requête préliminaire CORS depuis `http://localhost:3000`, puis depuis une origine étrangère | origine renvoyée et `Access-Control-Allow-Credentials: true` ; aucun `Access-Control-Allow-Origin` |
 
 **Droits, P0**
 
 | ID | Règles | Scénario | Résultat attendu |
 |---|---|---|---|
-| CT-FB-21 | RG-DRT-01, RG-DRT-02 | Matrice complète jouée par fournisseur de données : chaque ressource, chaque opération, chaque profil | le statut prévu par la matrice : 200, 201, 204, 401 ou 403 |
+| CT-FB-21 | RG-DRT-01, RG-DRT-02 | Matrice complète jouée par fournisseur de données : chaque ressource, chaque opération, chaque profil (28 opérations, `/api/me` compris) | le statut prévu par la matrice : 200, 201, 204, 401 ou 403 |
 | CT-FB-22 | RG-DRT-03 | Compte tiers, `PATCH` puis `DELETE` d'une photo masquée qui ne lui appartient pas | 404 et non 403 |
 | CT-FB-23 | RG-DRT-04 | Compte non admin : `PATCH` de son profil avec `roles: ["ROLE_ADMIN"]`, puis `GET` de son profil | rôle inchangé ; champ `roles` absent de la réponse |
 | CT-FB-24 | RG-DRT-05 | Admin crée un compte avec un rôle inconnu, puis avec un rôle en double | 422 dans les deux cas |
@@ -248,6 +254,9 @@ Règles d'écriture propres à Cypress :
 | CT-FB-82 | RG-USR-02, RG-USR-03 | `PATCH` avec un nouveau mot de passe, puis connexion avec l'ancien et le nouveau ; `PATCH` sans mot de passe | ancien refusé, nouveau accepté ; mot de passe inchangé |
 | CT-FB-83 | RG-USR-04, RG-USR-05 | Création sans prénom ; liste des comptes | 422 ; liste triée par nom, `fullName` correct |
 | CT-FB-84 | RG-USR-06 | Suppression d'un compte auteur de photos et de séries | photos et séries conservées, sans auteur |
+| CT-FB-85 | RG-USR-07 | `app:creer-admin` avec ses trois arguments et un mot de passe confirmé, puis sans argument avec réponses aux questions ; connexion du compte créé | succès ; compte `ROLE_ADMIN`, mot de passe haché ; connexion acceptée et `GET /api/users` en 200 |
+| CT-FB-86 | RG-USR-07, RG-USR-01, RG-USR-04 | La commande avec une adresse déjà prise, puis avec une adresse invalide et un nom vide | code 2, message dédié au doublon ; code 2, deux erreurs ; aucun compte créé |
+| CT-FB-87 | RG-USR-07, RG-USR-02 | La commande avec une confirmation différente, un mot de passe de 5 caractères, puis en mode non interactif | code 2 dans les trois cas, message adapté ; aucun compte créé |
 
 **Transverse**
 
@@ -255,6 +264,7 @@ Règles d'écriture propres à Cypress :
 |---|---|---|---|
 | CT-FB-90 | RG-COL-02 | Collection paginée sur plusieurs pages | `member`, `totalItems` et `view.next` présents |
 | CT-FB-91 | RG-Q-05 | Requête avec `Accept: application/json` | **en attente de décision** |
+| CT-FB-92 | RG-COL-04 | Lecture de la documentation OpenAPI | connexion, rafraîchissement sans corps, déconnexion (réponses 200 et 400) et `/api/me` décrits |
 
 ### 7.3 Unitaires front (CT-UF)
 
@@ -268,6 +278,15 @@ Règles d'écriture propres à Cypress :
 | CT-UF-06 | RG-NAV-01 | Liste des liens | quatre entrées, dans l'ordre et avec les libellés prévus | P2 |
 | CT-UF-07 | RG-GAL-02 | `usePhotos` avec des paramètres vides, `undefined`, `false`, `0` et accentués ; URL observée sur `$api` simulé | vides et `undefined` omis ; `false` et `0` conservés ; valeurs encodées | P1 |
 | CT-UF-08 | RG-SER-05 | `useAlbum` avec une collection d'une série, puis vide | `album` vaut la série ; puis `null` | P1 |
+| CT-UF-09 | RG-ADM-03 | `cheminDeRetour` avec des chemins du back-office, puis avec une valeur absente, un nombre, `//site-tiers.example`, une adresse absolue, `/galerie`, `/administrateur` et la page de connexion | chemin conservé ; `/admin` dans tous les autres cas | P0 |
+| CT-UF-10 | RG-ADM-06, RG-AUTH-01 | `connecter`, `$api` simulé | `POST /api/login` avec cookies, puis `/api/me` avec le jeton ; compte chargé ; rien dans `localStorage`, `sessionStorage` ni `document.cookie` | P0 |
+| CT-UF-11 | RG-ADM-07 | `requete` refusée en 401 puis rafraîchissement accepté ; requête refusée en 422 | rejouée une fois avec le nouveau jeton ; erreur transmise sans rafraîchir | P0 |
+| CT-UF-12 | RG-ADM-07 | `requete` refusée en 401, rafraîchissement refusé | session oubliée, retour à la connexion avec `raison=expiree` et la page quittée | P0 |
+| CT-UF-13 | RG-ADM-08 | Trois requêtes simultanées sans jeton | un seul rafraîchissement, les trois requêtes portent le jeton obtenu | P0 |
+| CT-UF-14 | RG-ADM-06 | `restaurer` avec un cookie valide, deux fois ; sans session, deux fois ; avec une API injoignable | session rouverte puis aucun nouvel appel ; un seul rafraîchissement ; `false` sans erreur levée | P1 |
+| CT-UF-15 | RG-ADM-09 | `deconnecter` avec une API qui échoue | `POST /api/token/invalidate` avec cookies ; session oubliée malgré l'échec | P1 |
+| CT-UF-16 | RG-ADM-10 | `useNavigationAdmin` : liste des liens ; `estActif` sur `/admin`, `/admin/`, `/admin/photos`, `/admin/photos/12`, `/admin/photosx`, `/galerie` | cinq rubriques dans l'ordre ; tableau de bord seul sur `/admin`, Photos sur sa page et sa sous-page, aucune ailleurs | P2 |
+| CT-UF-17 | RG-ADM-01, RG-ADM-02, RG-ADM-05 | Garde du back-office, session simulée : page publique ; `/admin/photos` sans session, en admin, en compte simple ; connexion sans puis avec session | rien ; renvoi avec la page demandée, passage, session fermée et `raison=refuse` ; page ouverte, puis renvoi selon RG-ADM-03 | P0 |
 
 ### 7.4 Composants et pages front (CT-CF)
 
@@ -299,6 +318,12 @@ Règles d'écriture propres à Cypress :
 | CT-CF-41 | RG-ERR-02 | 404 sans `detail`, avec un `statusMessage` « Page not found: /x » | message générique, « /x » absent de la page | P1 |
 | CT-CF-42 | RG-ERR-03, RG-ERR-04 | 500 | « Quelque chose s'est mal passé. », message fixe, pas de lien vers la galerie | P1 |
 | CT-CF-43 | RG-ERR-04 | Clic sur « Retour à l'accueil » puis sur « Voir la galerie » | `clearError` appelé avec la redirection prévue ; balise `robots` à `noindex` | P1 |
+| CT-CF-50 | RG-ADM-11 | `AppChamp` sans puis avec erreur ; saisie | libellé relié, attributs transmis au champ ; `aria-invalid` et `aria-describedby` vers le message ; valeur liée mise à jour | P1 |
+| CT-CF-51 | RG-ADM-04 | Connexion envoyée vide ; attributs des champs | deux messages, focus sur l'adresse, aucun appel ; `autocomplete` `username` et `current-password` | P1 |
+| CT-CF-52 | RG-ADM-04 | Connexion refusée en 401, puis 429 avec et sans message, puis 500 | message neutre, adresse conservée, mot de passe vidé et focalisé ; message de l'API ou de repli ; message d'indisponibilité | P1 |
+| CT-CF-53 | RG-ADM-02, RG-ADM-03 | Connexion admin depuis `?redirection=/admin/albums`, puis `//site-tiers.example` ; connexion d'un compte simple | `/admin/albums`, puis `/admin` ; session fermée et message de refus, aucune navigation | P0 |
+| CT-CF-54 | RG-ADM-07 | Page de connexion avec `raison=expiree` | message d'expiration en `role="status"`, aucune alerte | P1 |
+| CT-CF-55 | RG-ADM-09, RG-ADM-10 | Gabarit sur `/admin/photos/12` ; clic sur « Se déconnecter » | cinq rubriques, Photos seule en `aria-current`, pas d'en-tête public, lien d'évitement, nom du compte ; déconnexion puis `/admin/connexion` | P1 |
 
 ### 7.5 Bout en bout (CT-E2E)
 
@@ -321,6 +346,9 @@ Sur le jeu de référence décrit en section 5, après rechargement des fixtures
 | CT-E2E-13 | RG-ERR-02 | Adresse inconnue | 404, message générique, adresse non réaffichée | P1 |
 | CT-E2E-14 | RG-SER-07 | Requête sur `/galerie/puy-du-fou-2024` sans suivre la redirection | 301 vers `/albums/puy-du-fou-2024` | P1 |
 | CT-E2E-15 | RG-IDX-01, RG-IDX-02 | `robots.txt` ; titres d'onglet et langue | `Disallow: /admin` ; titres terminés par « · LL Studio », `lang="fr"` | P2 |
+| CT-E2E-16 | RG-ADM-01, RG-ADM-04, RG-ADM-06 | `/admin/photos` sans session ; mauvais mot de passe ; bon mot de passe ; rechargement | page de connexion avec retour ; message 401, mot de passe vidé ; arrivée sur `/admin/photos` avec le nom du compte, aucun jeton lisible par la page ; session conservée | P0 |
+| CT-E2E-17 | RG-ADM-09, RG-AUTH-12 | Connexion, « Se déconnecter », puis visite de `/admin` | tableau de bord salué ; page de connexion ; toujours la connexion | P0 |
+| CT-E2E-18 | RG-IDX-03 | Réponse de `/admin/connexion` ; page affichée | en-tête `X-Robots-Tag: noindex, nofollow` ; balise `robots` équivalente | P2 |
 
 ## 8. Critères d'entrée et de sortie
 
@@ -345,6 +373,7 @@ Sur le jeu de référence décrit en section 5, après rechargement des fixtures
 | 3 | Front, fonctions et composants | CT-UF, CT-CF |
 | 4 | Parcours de bout en bout | CT-E2E |
 | 5 | Rapport d'exécution, qui devient le jeu d'essai du dossier (#51) | aucun |
+| 6 | Itération 7 : session par cookie, compte courant, déconnexion, commande d'administration, accès au back-office | CT-UB-15, CT-FB-26 à CT-FB-29, CT-FB-85 à CT-FB-87, CT-FB-92, CT-UF-09 à CT-UF-17, CT-CF-50 à CT-CF-55, CT-E2E-16 à CT-E2E-18 |
 
 ## 10. Risques
 

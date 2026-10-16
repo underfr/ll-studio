@@ -22,10 +22,10 @@ cd e2e && pnpm install
 
 | Suite | Commande, depuis la racine | Durée |
 |---|---|---|
-| PHPUnit, unitaires et fonctionnels | `docker compose -f docker/docker-compose.yml exec php vendor/bin/phpunit` | 30 s environ |
-| PHPUnit avec couverture | `docker compose -f docker/docker-compose.yml exec php php -d pcov.enabled=1 vendor/bin/phpunit --coverage-text` | 35 s environ |
+| PHPUnit, unitaires et fonctionnels | `docker compose -f docker/docker-compose.yml exec php vendor/bin/phpunit` | 45 s environ |
+| PHPUnit avec couverture | `docker compose -f docker/docker-compose.yml exec php php -d pcov.enabled=1 vendor/bin/phpunit --coverage-text` | 50 s environ |
 | Vitest | `docker compose -f docker/docker-compose.yml exec frontend pnpm test` | 3 s environ |
-| Cypress, sans interface | `cd e2e && pnpm test` | 15 s environ |
+| Cypress, sans interface | `cd e2e && pnpm test` | 20 s environ |
 | Cypress, avec interface | `cd e2e && pnpm ouvrir` | |
 
 **Attention : `pnpm test` dans `e2e/` recharge les fixtures, ce qui efface la base de développement** (décision D2 du plan). Le mode avec interface ne les recharge pas.
@@ -41,6 +41,54 @@ Chacun de ces points a été rencontré pendant l'écriture des tests.
 | Ajout d'une dépendance au front | `node_modules` est un volume nommé, et pnpm recréerait un magasin dans le dépôt. | Dans le conteneur : `pnpm add -D --store-dir=/pnpm/store <paquet>`. |
 | pnpm 11 refuse de lancer Cypress | pnpm bloque les scripts d'installation non approuvés. | L'approbation de Cypress est versionnée dans `e2e/pnpm-workspace.yaml`, rien à faire. |
 | Deux tests PHPUnit marqués « incomplets » | C'est voulu : ils vérifient la partie établie d'une règle et signalent la partie en attente de décision. | Voir RG-Q-01 et RG-Q-05 ci-dessous. |
+| `pnpm test` répond « vitest: not found » dans le conteneur front | `node_modules` est un volume partagé par les branches : quand le conteneur front est recréé pendant que `main` est extraite, son installation retire les dépendances de test. | Sur la branche `tests`, dans le conteneur : `pnpm install --frozen-lockfile --store-dir=/pnpm/store`. |
+| Des tentatives de connexion échouées s'accumulent pendant les tests de bout en bout | `/api/login` verrouille un identifiant après 5 échecs en 15 minutes. CT-E2E-16 en provoque un volontairement à chaque passage. | Rien à faire : la connexion réussie qui suit remet le compteur à zéro. |
+
+## Bilan de la campagne du 16 octobre 2026
+
+Branche `tests`, après synchronisation avec `main` au commit `c484590`, qui livre l'itération 7 : commande de création de l'administrateur (#47), gabarit d'administration (#26), session par cookie avec `/api/me` et déconnexion (#62), écran de connexion et garde (#25).
+
+| Niveau | Tests | Résultat |
+|---|---|---|
+| Unitaires PHP | 34 | tous verts |
+| Fonctionnels API | 212 | verts, dont 2 en attente de décision |
+| Unitaires et composants front | 110 | tous verts |
+| Bout en bout | 18 | tous verts |
+| **Total** | **374** | **les 153 cas du plan sont couverts** |
+
+Le contrôle de traçabilité par script confirme que chaque cas du plan a son test, qu'aucun test ne porte un identifiant absent du plan, et que les 127 règles établies sont vérifiées par au moins un cas. Chaque suite a été exécutée trois fois de suite avec le même résultat.
+
+### Ce que la synchronisation a cassé
+
+Avant tout ajout, la synchronisation seule a fait échouer **deux tests sur 305** : CT-FB-11 et CT-FB-16 lisaient le jeton de rafraîchissement dans le corps de `/api/login`. Ce n'est pas un défaut de l'application mais **un changement de contrat décidé** le 16 octobre (#62) : le jeton passe dans un cookie `HttpOnly`. Conformément à la règle du plan, la règle a été révisée d'abord (RG-AUTH-01, RG-AUTH-03, nouvelle RG-AUTH-11), puis les deux tests réécrits pour vérifier le cookie. Ils n'ont pas été assouplis : CT-FB-16 vérifie toujours l'usage unique, désormais par le cookie.
+
+Les 59 tests Vitest et les 15 parcours Cypress existants sont passés sans modification.
+
+### Ajouts
+
+| Lot | Cas |
+|---|---|
+| Session côté API : cookie, déconnexion, `/api/me`, CORS, documentation | CT-UB-15, CT-FB-26 à CT-FB-29, CT-FB-92, une ligne de plus dans la matrice CT-FB-21 |
+| Commande `app:creer-admin` | CT-FB-85 à CT-FB-87 |
+| Session côté front : retour après connexion, jeton en mémoire, 401 rejouée, rafraîchissement unique, déconnexion | CT-UF-09 à CT-UF-15 |
+| Navigation et garde du back-office | CT-UF-16, CT-UF-17 |
+| Champ de formulaire, écran de connexion, gabarit | CT-CF-50 à CT-CF-55 |
+| Parcours du back-office | CT-E2E-16 à CT-E2E-18 |
+
+### Couverture du code PHP
+
+Les trois classes ajoutées par l'itération, `CreerAdminCommand`, `CurrentUserProvider` et `DeconnexionOpenApiFactory`, sont couvertes à 100 %. L'ensemble de `src/` hors fixtures et noyau passe de 86,8 % à **88,5 %** ; l'ensemble de `src/`, fixtures comprises, de 58,1 % à 61,8 %.
+
+### Vérification par mutation
+
+Quatre défauts introduits temporairement dans le code applicatif, sans être commités, puis retirés :
+
+| Défaut introduit | Détecté par |
+|---|---|
+| Le cookie du jeton de rafraîchissement n'est plus `HttpOnly` | CT-FB-26 |
+| Chaque requête expirée lance son propre rafraîchissement | CT-UF-13 |
+| Le paramètre de retour accepte n'importe quel chemin | CT-UF-09, CT-UF-17, CT-CF-53 (8 tests) |
+| La garde ne vérifie plus le rôle `ROLE_ADMIN` | CT-UF-17 |
 
 ## Bilan de la campagne du 8 octobre 2026
 

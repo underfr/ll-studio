@@ -1,6 +1,6 @@
 # Règles de gestion de LL Studio
 
-Ce document recense les règles que l'application applique aujourd'hui. Elles ont été établies par lecture du code de la branche `main` au commit `35c0e0f` (8 octobre 2026), puis vérifiées sur l'application en fonctionnement quand c'était possible.
+Ce document recense les règles que l'application applique aujourd'hui. Elles ont été établies par lecture du code de la branche `main` au commit `35c0e0f` (8 octobre 2026), puis vérifiées sur l'application en fonctionnement quand c'était possible. Elles ont été complétées le 16 octobre 2026 avec l'itération 7, au commit `c484590` : session du back-office par cookie, compte courant, déconnexion, commande de création de l'administrateur, écran de connexion et gabarit d'administration.
 
 Il sert de référence aux tests : **un test vérifie une règle**. Si un test échoue, soit le code a un défaut, soit la règle doit être révisée. On ne modifie jamais un test pour qu'il passe sans avoir tranché lequel des deux.
 
@@ -37,9 +37,9 @@ Profils utilisés dans tout le document :
 
 | ID | Règle | Source |
 |---|---|---|
-| RG-AUTH-01 | On se connecte par adresse e-mail et mot de passe sur `POST /api/login`. En cas de succès, l'API renvoie un jeton d'accès et un jeton de rafraîchissement. | `security.yaml` |
+| RG-AUTH-01 | On se connecte par adresse e-mail et mot de passe sur `POST /api/login`. En cas de succès, l'API renvoie le jeton d'accès dans le corps de la réponse et le jeton de rafraîchissement dans un cookie (RG-AUTH-11). | `security.yaml` |
 | RG-AUTH-02 | Le jeton d'accès est valable une heure. Au-delà, il est refusé. | `lexik_jwt_authentication.yaml` |
-| RG-AUTH-03 | Le jeton de rafraîchissement est valable 30 jours. Il est à usage unique : chaque rafraîchissement le consomme et en délivre un nouveau, dont la durée repart à 30 jours. | `gesdinet_jwt_refresh_token.yaml` |
+| RG-AUTH-03 | Le jeton de rafraîchissement est valable 30 jours. Il est à usage unique : chaque rafraîchissement le consomme et en délivre un nouveau, dont la durée repart à 30 jours. `POST /api/token/refresh` le lit dans le cookie, sans corps de requête. | `gesdinet_jwt_refresh_token.yaml` |
 | RG-AUTH-04 | Un compte a au plus 5 jetons de rafraîchissement actifs, soit 5 appareils connectés. | `gesdinet_jwt_refresh_token.yaml` |
 | RG-AUTH-05 | Des identifiants refusés donnent un 401 avec le message « Identifiants invalides. », que l'adresse existe ou non : la réponse ne permet pas de savoir si un compte existe. | `security.yaml`, traductions Symfony |
 | RG-AUTH-06 | Au-delà de 5 échecs en 15 minutes pour un même identifiant, la connexion est refusée en 429, avec l'en-tête `Retry-After: 900` et le message « Trop de tentatives de connexion échouées, veuillez réessayer dans 15 minutes. ». Le refus vaut même si le bon mot de passe est fourni avant la fin du délai. | `security.yaml` (`login_throttling`), `LoginFailureListener` |
@@ -47,6 +47,10 @@ Profils utilisés dans tout le document :
 | RG-AUTH-08 | Les messages d'erreur fournis par Symfony sont en français. | `translation.yaml` (`default_locale: fr`) |
 | RG-AUTH-09 | Le mot de passe n'est jamais renvoyé par l'API, ni en clair ni haché. | `User` (aucun groupe sur `password`, `plainPassword` en écriture seule) |
 | RG-AUTH-10 | Un jeton absent, altéré ou mal signé donne un 401 sur toute opération qui exige une authentification. | Lexik |
+| RG-AUTH-11 | Le jeton de rafraîchissement n'apparaît jamais dans le corps d'une réponse. Il est posé dans le cookie `refresh_token`, `HttpOnly`, `SameSite=Strict`, limité au chemin `/api/token`, et `Secure` en production (pas en développement ni en test, qui tournent en HTTP). | `gesdinet_jwt_refresh_token.yaml` |
+| RG-AUTH-12 | `POST /api/token/invalidate` ferme la session : le jeton de rafraîchissement du cookie est supprimé et le cookie effacé, si bien qu'il ne permet plus de rafraîchir. Aucun jeton d'accès n'est nécessaire. Sans jeton de rafraîchissement, la réponse est 400 ; en `GET`, 405. | `security.yaml` (`logout`), routes |
+| RG-AUTH-13 | `GET /api/me` renvoie le compte du porteur du jeton d'accès, avec les champs de `GET /api/users/{id}` et sous la même IRI `/api/users/{id}`. Sans jeton, 401. | `User`, `CurrentUserProvider` |
+| RG-AUTH-14 | L'API accepte les requêtes avec identifiants (cookies) des seules origines autorisées par `CORS_ALLOW_ORIGIN`, qu'elle renvoie telles quelles. Une autre origine ne reçoit pas d'en-tête `Access-Control-Allow-Origin`. | `nelmio_cors.yaml` |
 
 ## 3. Droits (RG-DRT)
 
@@ -66,8 +70,9 @@ Profils utilisés dans tout le document :
 | Message | lister, consulter, marquer lu, supprimer | non | non | non | oui |
 | Compte | lister, créer, supprimer | non | non | non | oui |
 | Compte | consulter, modifier | non | le sien seulement | le sien seulement | oui |
+| Compte | consulter le sien par `/api/me` | non | oui | oui | oui |
 
-Source : attributs `security` des `#[ApiResource]`, `ContentVoter`.
+Source : attributs `security` des `#[ApiResource]`, `ContentVoter`, `CurrentUserProvider`.
 
 | ID | Règle | Source |
 |---|---|---|
@@ -143,6 +148,7 @@ Source : attributs `security` des `#[ApiResource]`, `ContentVoter`.
 | RG-USR-04 | Prénom et nom sont obligatoires, 50 caractères au plus. Le nom complet est « Prénom Nom ». | `User`, `User::getFullName` |
 | RG-USR-05 | Les comptes sont triés par nom. | `#[ApiResource]` de `User` |
 | RG-USR-06 | Supprimer un compte ne supprime ni ses photos ni ses séries, qui perdent simplement leur auteur. | `owner_id` (`ON DELETE SET NULL`) |
+| RG-USR-07 | La commande `app:creer-admin` crée un compte doté de `ROLE_ADMIN`, y compris en production. L'adresse, le prénom et le nom se passent en arguments ou sont demandés. Le mot de passe n'est jamais un argument : il est saisi deux fois, de façon masquée, et la commande refuse en mode non interactif. Les règles RG-USR-01, RG-USR-02 et RG-USR-04 s'appliquent ; en cas d'erreur, rien n'est enregistré et le code de sortie est non nul. | `CreerAdminCommand` |
 
 ## 9. Collections, règles transverses de l'API (RG-COL)
 
@@ -151,6 +157,7 @@ Source : attributs `security` des `#[ApiResource]`, `ContentVoter`.
 | RG-COL-01 | Les collections paginées acceptent `?itemsPerPage=` jusqu'à 60. Le client ne peut pas désactiver la pagination. | `api_platform.yaml` |
 | RG-COL-02 | Les réponses sont en JSON-LD : une collection expose `member`, `totalItems` et, quand il y a plusieurs pages, `view`. | API Platform |
 | RG-COL-03 | Une modification partielle exige l'en-tête `Content-Type: application/merge-patch+json` ; tout autre type est refusé. | API Platform (`patch_formats` par défaut) |
+| RG-COL-04 | La documentation OpenAPI décrit toutes les routes de session : connexion, rafraîchissement par cookie, déconnexion et compte courant. | Lexik, bundle de rafraîchissement, `DeconnexionOpenApiFactory`, `User` |
 
 ---
 
@@ -235,10 +242,29 @@ Source : attributs `security` des `#[ApiResource]`, `ContentVoter`.
 |---|---|---|
 | RG-IDX-01 | `robots.txt` interdit l'indexation de `/admin`. | `public/robots.txt` |
 | RG-IDX-02 | Le titre de chaque page se termine par « · LL Studio » et la langue du document est le français. | `nuxt.config.ts` |
+| RG-IDX-03 | Les pages du back-office ne sont pas indexables : en-tête `X-Robots-Tag: noindex, nofollow` et balise `robots` équivalente. Elles sont rendues côté navigateur uniquement, sans contenu dans le HTML servi. | `nuxt.config.ts` (`routeRules`), `layouts/admin.vue`, `pages/admin/connexion.vue` |
+
+## 18. Back-office (RG-ADM)
+
+Règles de l'itération 7 : accès, session et gabarit. Les écrans de gestion (#27 à #30, #42) n'existent pas encore.
+
+| ID | Règle | Source |
+|---|---|---|
+| RG-ADM-01 | Toute page sous `/admin`, hors `/admin/connexion`, exige la session d'un compte `ROLE_ADMIN`. Sans session, on est renvoyé vers `/admin/connexion?redirection=<page demandée>`. | `middleware/admin.global.ts` |
+| RG-ADM-02 | Un compte authentifié sans `ROLE_ADMIN` est refusé : sa session est aussitôt fermée et la page de connexion affiche « Ce compte n'a pas accès à l'administration. » | `middleware/admin.global.ts`, `pages/admin/connexion.vue` |
+| RG-ADM-03 | Après connexion, le paramètre de retour n'est suivi que s'il désigne une page du back-office autre que la connexion. Sinon, on arrive sur le tableau de bord `/admin`. | `useSession::cheminDeRetour` |
+| RG-ADM-04 | Le formulaire de connexion exige l'adresse et le mot de passe (« Indiquez votre adresse e-mail. », « Indiquez votre mot de passe. ») et place le focus sur le premier champ à corriger. Un 401 affiche « Adresse e-mail ou mot de passe incorrect. », sans dire lequel des deux ; un 429, le message de l'API ; toute autre erreur, « Le service est momentanément indisponible. Réessayez plus tard. ». Après un échec, l'adresse est conservée et le mot de passe vidé. | `pages/admin/connexion.vue` |
+| RG-ADM-05 | Une session déjà ouverte sur la page de connexion renvoie au back-office, en suivant RG-ADM-03. | `middleware/admin.global.ts` |
+| RG-ADM-06 | Le jeton d'accès n'est conservé qu'en mémoire : ni `localStorage`, ni `sessionStorage`, ni cookie lisible. Un rechargement de page restaure la session par le cookie de rafraîchissement. Sans session, l'API n'est interrogée qu'une fois. | `useSession` |
+| RG-ADM-07 | Une requête du back-office refusée en 401 est rejouée une fois après rafraîchissement. Si le rafraîchissement échoue, la session est oubliée et l'on revient à la connexion, qui affiche « Votre session a expiré. Reconnectez-vous pour reprendre où vous en étiez. » et ramènera à la page quittée. | `useSession::requete`, `pages/admin/connexion.vue` |
+| RG-ADM-08 | Plusieurs requêtes simultanées qui ont besoin d'un rafraîchissement n'en déclenchent qu'un, le jeton étant à usage unique. | `useSession::rafraichir` |
+| RG-ADM-09 | La déconnexion révoque la session auprès de l'API (RG-AUTH-12), l'oublie côté navigateur même si l'API ne répond pas, et ramène à la connexion. | `useSession::deconnecter`, `layouts/admin.vue` |
+| RG-ADM-10 | Les pages du back-office ont leur propre gabarit, sans l'en-tête ni le pied de page publics : lien d'évitement, navigation Tableau de bord, Photos, Albums, Catégories, Messages, rubrique active signalée par `aria-current` y compris sur ses sous-pages, nom du compte connecté et bouton de déconnexion. | `layouts/admin.vue`, `useNavigationAdmin` |
+| RG-ADM-11 | Un champ de formulaire a un libellé relié. En erreur, il est marqué `aria-invalid` et relié à son message par `aria-describedby`. | `AppChamp` |
 
 ---
 
-## 18. Points à trancher (RG-Q)
+## 19. Points à trancher (RG-Q)
 
 Comportements constatés dont l'intention n'est pas établie. Les tests correspondants restent **en attente** tant qu'une décision n'est pas prise, pour ne pas figer un défaut.
 
@@ -257,6 +283,6 @@ Comportements constatés dont l'intention n'est pas établie. Les tests correspo
 | RG-Q-11 | La couverture d'une série peut être une photo masquée ou une photo qui n'appartient pas à la série. | Faut-il le refuser à la validation ? |
 | RG-Q-12 | « Albums en vedette » affiche les 4 séries les plus récentes, sans notion de mise en avant (issue #30). | Comportement provisoire assumé ? |
 
-## 19. Hors périmètre
+## 20. Hors périmètre
 
-Ne sont pas couverts ici, faute d'exister encore : le back-office (issues #25 à #30), le formulaire de contact (#41), les mentions légales (#43) et l'internationalisation (#50). Leurs règles seront ajoutées à ce document au fil des itérations.
+Ne sont pas couverts ici, faute d'exister encore : les écrans de gestion du back-office (issues #27 à #30, #42), le formulaire de contact (#41), les mentions légales (#43) et l'internationalisation (#50). Leurs règles seront ajoutées à ce document au fil des itérations.
