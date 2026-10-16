@@ -1,26 +1,105 @@
 /*
- * Jetons de design, repris un pour un des variables du fichier Figma
- * « Fil rouge CDA ». Les noms suivent ceux de la maquette pour qu'un aller-retour
- * avec le design reste lisible.
+ * Feuille d'entrée du style (issues #66 et #67).
+ *
+ * Tailwind CSS 4 et daisyUI 5 fournissent la base, les composants et leurs
+ * réglages par défaut : arrondis, ombres, tailles. Seules les couleurs sont
+ * propres au site, dans le thème « llstudio », reprises une à une du fichier
+ * Figma « Fil rouge CDA ».
+ */
+@import "tailwindcss";
+
+/* Aucun thème fourni par daisyUI : le thème du site est le seul chargé. */
+@plugin "daisyui" {
+    themes: false;
+}
+
+@plugin "daisyui/theme" {
+    name: "llstudio";
+    default: true;
+    prefersdark: false;
+    color-scheme: light;
+
+    /* Fonds : crème principal, surface teintée des panneaux, puis une teinte
+       plus soutenue que le Figma ne nomme pas. */
+    --color-base-100: #faf7f1;
+    --color-base-200: #efe9dd;
+    --color-base-300: #e4dccc;
+    --color-base-content: #12100c;
+
+    /* Or vif pour les actions, texte encre dessus (contraste 7,9:1). */
+    --color-primary: #c9a24b;
+    --color-primary-content: #12100c;
+
+    /* Or profond pour les libellés et les liens (5,7:1 sur le fond). */
+    --color-secondary: #7a5e18;
+    --color-secondary-content: #f4f0e8;
+    --color-accent: #7a5e18;
+    --color-accent-content: #f4f0e8;
+
+    --color-neutral: #12100c;
+    --color-neutral-content: #f4f0e8;
+
+    /*
+     * Messages : absents du Figma, choisis dans le registre de la palette,
+     * tous au-dessus de 5:1 avec leur texte. Provisoires, à valider puis à
+     * reporter dans le Figma.
+     */
+    --color-info: #3e5c76;
+    --color-info-content: #f4f0e8;
+    --color-success: #4f6b3a;
+    --color-success-content: #f4f0e8;
+    --color-warning: #c0841a;
+    --color-warning-content: #12100c;
+
+    /* Terracotta : erreurs et actions destructrices (5,2:1). */
+    --color-error: #a84e37;
+    --color-error-content: #faf7f1;
+
+    /* Hors couleurs : valeurs du thème « light » de daisyUI, gardées telles
+       quelles par décision du 16/10/2026. */
+    --radius-selector: 0.5rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.5rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+}
+
+/*
+ * Polices du Figma. « font-sans », police par défaut de Tailwind, devient
+ * Archivo ; « font-display » sert aux titres et « font-mono » aux libellés.
+ */
+@theme inline {
+    --font-display: var(--police-titre);
+    --font-sans: var(--police-texte);
+    --font-mono: var(--police-ui);
+}
+
+/*
+ * Anciennes variables, en alias des couleurs du thème pendant la migration :
+ * les composants pas encore passés à daisyUI s'affichent à l'identique.
+ * Elles disparaîtront avec l'issue #68.
  */
 :root {
     /* Fonds */
-    --fond-page: #faf7f1;
-    --fond-surface-teintee: #efe9dd;
+    --fond-page: var(--color-base-100);
+    --fond-surface-teintee: var(--color-base-200);
 
     /* Textes */
-    --texte-principal: #12100c;
+    --texte-principal: var(--color-base-content);
     --texte-secondaire: rgb(18 16 12 / 68%);
     --texte-tertiaire: rgb(18 16 12 / 50%);
-    --texte-sur-sombre: #f4f0e8;
+    --texte-sur-sombre: var(--color-neutral-content);
 
     /* Terracotta : erreurs et actions destructrices */
-    --terracotta: #a84e37;
+    --terracotta: var(--color-error);
 
     /* Or : couleur d'accent de la marque */
-    --or-texte: #7a5e18;
-    --or-remplissage: #c9a24b;
-    --texte-sur-or: #12100c;
+    --or-texte: var(--color-secondary);
+    --or-remplissage: var(--color-primary);
+    --texte-sur-or: var(--color-primary-content);
 
     /* Voiles et bordures */
     --voile-leger: rgb(18 16 12 / 6%);
@@ -55,222 +134,214 @@
     }
 }
 
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
+/*
+ * Règles globales dans les couches de Tailwind : hors couche, elles
+ * l'emporteraient sur les classes utilitaires et les composants daisyUI.
+ */
+@layer base {
     html {
-        scroll-behavior: auto;
+        scroll-behavior: smooth;
     }
 
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    body {
+        margin: 0;
+        background-color: var(--fond-page);
+        color: var(--texte-principal);
+        font-family: var(--police-texte);
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        margin: 0;
+        font-family: var(--police-titre);
+        font-weight: 500;
+        letter-spacing: -0.5px;
+        line-height: 1.05;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /*
+     * Anneau de focus commun. Il reste visible sur fond clair comme sur l'or,
+     * ce qui évite d'avoir à le redéfinir composant par composant.
+     */
+    :focus-visible {
+        outline: 2px solid var(--or-texte);
+        outline-offset: 3px;
     }
 }
 
-body {
-    margin: 0;
-    background-color: var(--fond-page);
-    color: var(--texte-principal);
-    font-family: var(--police-texte);
-    font-size: 16px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-}
+@layer components {
+    /* Lien d'évitement : visible uniquement quand il reçoit le focus clavier. */
+    .lien-evitement {
+        position: absolute;
+        z-index: 100;
+        top: 8px;
+        left: 8px;
+        padding: 10px 16px;
+        transform: translateY(-200%);
+        border: 1px solid var(--bordure-discrete);
+        background-color: var(--fond-page);
+        color: var(--texte-principal);
+        font-family: var(--police-ui);
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: transform var(--transition-courte);
+    }
 
-h1,
-h2,
-h3,
-h4 {
-    margin: 0;
-    font-family: var(--police-titre);
-    font-weight: 500;
-    letter-spacing: -0.5px;
-    line-height: 1.05;
-}
+    .lien-evitement:focus {
+        transform: translateY(0);
+    }
 
-p {
-    margin: 0;
-}
+    /*
+     * Gabarit d'attente des pages dont le contenu relève d'une issue ultérieure.
+     * Ces règles disparaîtront avec les dernières pages d'attente : contact (#41)
+     * et rubriques du back-office (#27, #28, #42).
+     */
+    .jalon {
+        max-width: var(--largeur-max);
+        margin-inline: auto;
+        padding: 96px var(--gouttiere);
+    }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
+    .jalon__rubrique {
+        color: var(--or-texte);
+        font-family: var(--police-ui);
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
 
-img {
-    display: block;
-    max-width: 100%;
-}
+    .jalon__titre {
+        max-width: 18ch;
+        margin-top: 16px;
+        font-size: clamp(40px, 7vw, 76px);
+    }
 
-button {
-    font: inherit;
-    color: inherit;
-}
+    .jalon__note {
+        margin-top: 24px;
+        color: var(--texte-tertiaire);
+        font-size: 15px;
+    }
 
-/*
- * Anneau de focus commun. Il reste visible sur fond clair comme sur l'or,
- * ce qui évite d'avoir à le redéfinir composant par composant.
- */
-:focus-visible {
-    outline: 2px solid var(--or-texte);
-    outline-offset: 3px;
-}
+    /*
+     * Boutons de la maquette. Deux variantes seulement : un aplat or pour
+     * l'action principale, un contour clair pour l'action secondaire posée sur
+     * une photographie.
+     */
+    .bouton {
+        display: inline-flex;
+        align-items: center;
+        padding: 15px 26px;
+        font-family: var(--police-ui);
+        font-size: 12px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        transition: background-color var(--transition-courte), color var(--transition-courte),
+            border-color var(--transition-courte);
+    }
 
-/* Lien d'évitement : visible uniquement quand il reçoit le focus clavier. */
-.lien-evitement {
-    position: absolute;
-    z-index: 100;
-    top: 8px;
-    left: 8px;
-    padding: 10px 16px;
-    transform: translateY(-200%);
-    border: 1px solid var(--bordure-discrete);
-    background-color: var(--fond-page);
-    color: var(--texte-principal);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transition: transform var(--transition-courte);
-}
+    .bouton--or {
+        background-color: var(--or-remplissage);
+        color: var(--texte-sur-or);
+        font-weight: 700;
+    }
 
-.lien-evitement:focus {
-    transform: translateY(0);
-}
+    .bouton--or:hover {
+        background-color: var(--or-texte);
+        color: var(--texte-sur-sombre);
+    }
 
-/*
- * Gabarit d'attente des pages dont le contenu relève d'une issue ultérieure.
- * Ces règles disparaîtront avec les dernières pages d'attente : contact (#41)
- * et rubriques du back-office (#27, #28, #42).
- */
-.jalon {
-    max-width: var(--largeur-max);
-    margin-inline: auto;
-    padding: 96px var(--gouttiere);
-}
+    .bouton--contour {
+        border: 1px solid rgb(244 240 232 / 50%);
+        color: var(--texte-sur-sombre);
+    }
 
-.jalon__rubrique {
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
+    .bouton--contour:hover {
+        border-color: var(--texte-sur-sombre);
+        background-color: rgb(244 240 232 / 10%);
+    }
 
-.jalon__titre {
-    max-width: 18ch;
-    margin-top: 16px;
-    font-size: clamp(40px, 7vw, 76px);
-}
-
-.jalon__note {
-    margin-top: 24px;
-    color: var(--texte-tertiaire);
-    font-size: 15px;
-}
-
-/*
- * Boutons de la maquette. Deux variantes seulement : un aplat or pour
- * l'action principale, un contour clair pour l'action secondaire posée sur
- * une photographie.
- */
-.bouton {
-    display: inline-flex;
-    align-items: center;
-    padding: 15px 26px;
-    font-family: var(--police-ui);
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    transition: background-color var(--transition-courte), color var(--transition-courte),
-        border-color var(--transition-courte);
-}
-
-.bouton--or {
-    background-color: var(--or-remplissage);
-    color: var(--texte-sur-or);
-    font-weight: 700;
-}
-
-.bouton--or:hover {
-    background-color: var(--or-texte);
-    color: var(--texte-sur-sombre);
-}
-
-.bouton--contour {
-    border: 1px solid rgb(244 240 232 / 50%);
-    color: var(--texte-sur-sombre);
-}
-
-.bouton--contour:hover {
-    border-color: var(--texte-sur-sombre);
-    background-color: rgb(244 240 232 / 10%);
-}
-
-/*
- * En-tête de section : surtitre en or, titre en Cormorant, lien de report
- * aligné sur la ligne de base du titre.
- */
-.section {
-    padding: 56px var(--gouttiere);
-}
-
-@media (min-width: 900px) {
+    /*
+     * En-tête de section : surtitre en or, titre en Cormorant, lien de report
+     * aligné sur la ligne de base du titre.
+     */
     .section {
-        padding: 80px var(--gouttiere);
+        padding: 56px var(--gouttiere);
     }
-}
 
-.section__tete {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 32px;
-}
+    @media (min-width: 900px) {
+        .section {
+            padding: 80px var(--gouttiere);
+        }
+    }
 
-@media (min-width: 900px) {
     .section__tete {
-        margin-bottom: 40px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 32px;
     }
-}
 
-.section__kicker {
-    margin-bottom: 6px;
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: clamp(10px, 0.9vw, 11px);
-    letter-spacing: clamp(3px, 0.35vw, 4px);
-    text-transform: uppercase;
-}
+    @media (min-width: 900px) {
+        .section__tete {
+            margin-bottom: 40px;
+        }
+    }
 
-.section__titre {
-    font-size: clamp(40px, 4.5vw, 64px);
-    letter-spacing: -1px;
-}
+    .section__kicker {
+        margin-bottom: 6px;
+        color: var(--or-texte);
+        font-family: var(--police-ui);
+        font-size: clamp(10px, 0.9vw, 11px);
+        letter-spacing: clamp(3px, 0.35vw, 4px);
+        text-transform: uppercase;
+    }
 
-.section__report {
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color var(--transition-courte);
-}
+    .section__titre {
+        font-size: clamp(40px, 4.5vw, 64px);
+        letter-spacing: -1px;
+    }
 
-.section__report:hover {
-    color: var(--texte-principal);
+    .section__report {
+        color: var(--or-texte);
+        font-family: var(--police-ui);
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: color var(--transition-courte);
+    }
+
+    .section__report:hover {
+        color: var(--texte-principal);
+    }
 }

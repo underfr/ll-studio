@@ -90,9 +90,9 @@ onBeforeUnmount(() => {
 <template>
     <Teleport to="body">
         <Transition name="menu">
-            <div v-if="ouvert" class="menu">
+            <div v-if="ouvert" class="menu-mobile">
                 <!-- Voile cliquable : fermer en touchant à côté est le geste attendu. -->
-                <div class="menu__voile" @click="fermer" />
+                <div class="menu-mobile__voile" @click="fermer" />
 
                 <!--
                     L'id est porté ici et non passé en attribut depuis l'en-tête :
@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
                 <div
                     id="menu-mobile"
                     ref="panneau"
-                    class="menu__panneau"
+                    class="menu-mobile__panneau"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Menu de navigation"
@@ -111,20 +111,20 @@ onBeforeUnmount(() => {
                     <button
                         ref="boutonFermer"
                         type="button"
-                        class="menu__fermer"
+                        class="menu-mobile__fermer"
                         aria-label="Fermer le menu"
                         @click="fermer"
                     >
                         &times;
                     </button>
 
-                    <nav class="menu__nav" aria-label="Navigation principale">
+                    <nav class="menu-mobile__nav" aria-label="Navigation principale">
                         <NuxtLink
                             v-for="lien in liens"
                             :key="lien.chemin"
                             :to="lien.chemin"
-                            class="menu__lien"
-                            :class="{ 'menu__lien--actif': estActif(lien.chemin) }"
+                            class="menu-mobile__lien"
+                            :class="{ 'menu-mobile__lien--actif': estActif(lien.chemin) }"
                             :aria-current="estActif(lien.chemin) ? 'page' : undefined"
                             @click="fermer"
                         >
@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
                         </NuxtLink>
                     </nav>
 
-                    <NuxtLink to="/admin" class="menu__admin" @click="fermer">
+                    <NuxtLink to="/admin" class="menu-mobile__admin" @click="fermer">
                         Admin
                     </NuxtLink>
                 </div>
@@ -142,19 +142,19 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.menu {
+.menu-mobile {
     position: fixed;
     z-index: 50;
     inset: 0;
 }
 
-.menu__voile {
+.menu-mobile__voile {
     position: absolute;
     inset: 0;
     background-color: var(--scrim);
 }
 
-.menu__panneau {
+.menu-mobile__panneau {
     position: absolute;
     top: 0;
     right: 0;
@@ -169,7 +169,7 @@ onBeforeUnmount(() => {
     background-color: var(--fond-surface-teintee);
 }
 
-.menu__fermer {
+.menu-mobile__fermer {
     padding: 0;
     border: 0;
     background: none;
@@ -180,7 +180,7 @@ onBeforeUnmount(() => {
     line-height: 1;
 }
 
-.menu__nav {
+.menu-mobile__nav {
     display: flex;
     width: 100%;
     flex-direction: column;
@@ -188,7 +188,7 @@ onBeforeUnmount(() => {
     padding-top: 20px;
 }
 
-.menu__lien {
+.menu-mobile__lien {
     padding: 8px 0;
     border-bottom: 1px solid var(--bordure-tenue);
     color: var(--texte-principal);
@@ -198,11 +198,11 @@ onBeforeUnmount(() => {
     line-height: 1;
 }
 
-.menu__lien--actif {
+.menu-mobile__lien--actif {
     color: var(--or-texte);
 }
 
-.menu__admin {
+.menu-mobile__admin {
     display: flex;
     width: 100%;
     align-items: center;
@@ -219,23 +219,23 @@ onBeforeUnmount(() => {
     text-transform: uppercase;
 }
 
-.menu-enter-active .menu__panneau,
-.menu-leave-active .menu__panneau {
+.menu-enter-active .menu-mobile__panneau,
+.menu-leave-active .menu-mobile__panneau {
     transition: transform var(--transition-panneau);
 }
 
-.menu-enter-active .menu__voile,
-.menu-leave-active .menu__voile {
+.menu-enter-active .menu-mobile__voile,
+.menu-leave-active .menu-mobile__voile {
     transition: opacity var(--transition-panneau);
 }
 
-.menu-enter-from .menu__panneau,
-.menu-leave-to .menu__panneau {
+.menu-enter-from .menu-mobile__panneau,
+.menu-leave-to .menu-mobile__panneau {
     transform: translateX(100%);
 }
 
-.menu-enter-from .menu__voile,
-.menu-leave-to .menu__voile {
+.menu-enter-from .menu-mobile__voile,
+.menu-leave-to .menu-mobile__voile {
     opacity: 0;
 }
 </style>
