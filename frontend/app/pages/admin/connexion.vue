@@ -2,10 +2,9 @@
 /**
  * Écran de connexion du back-office (issue #25).
  *
- * Le Figma ne contient pas cet écran : il assemble les composants du design
- * system, champ « Input » et bouton primaire, sur une carte centrée. La page
- * se passe de gabarit, pour ne montrer ni la navigation publique ni celle de
- * l'administration à qui n'est pas connecté.
+ * Une carte daisyUI centrée (issue #67). La page se passe de gabarit, pour
+ * ne montrer ni la navigation publique ni celle de l'administration à qui
+ * n'est pas connecté.
  */
 import type AppChamp from '~/components/AppChamp.vue'
 
@@ -96,156 +95,65 @@ async function envoyer(): Promise<void> {
 </script>
 
 <template>
-    <main class="connexion">
-        <div class="carte">
-            <div class="carte__tete">
-                <AppLogo />
-                <p class="carte__rubrique">Administration</p>
-                <h1 class="carte__titre">Connexion</h1>
+    <main class="connexion grid min-h-screen place-items-center bg-base-200 px-4 py-10">
+        <div class="carte card w-full max-w-sm bg-base-100 shadow-sm">
+            <div class="card-body gap-6">
+                <div class="flex flex-col gap-3">
+                    <AppLogo />
+                    <p class="mt-3 font-mono text-xs uppercase tracking-[0.3em] text-secondary">
+                        Administration
+                    </p>
+                    <h1 class="font-display text-4xl">Connexion</h1>
+                </div>
+
+                <div v-if="information && !erreurFormulaire" class="alert alert-info alert-soft text-sm" role="status">
+                    {{ information }}
+                </div>
+
+                <!--
+                    Zone d'alerte toujours présente dans le DOM, pour que les
+                    lecteurs d'écran annoncent le message dès qu'il y apparaît.
+                    Vide, elle sort du flux au lieu d'être masquée : display:
+                    none la retirerait de l'arbre d'accessibilité.
+                -->
+                <div class="empty:absolute" role="alert">
+                    <div v-if="erreurFormulaire" class="alert alert-error alert-soft text-sm">
+                        {{ erreurFormulaire }}
+                    </div>
+                </div>
+
+                <form class="flex flex-col gap-4" novalidate @submit.prevent="envoyer">
+                    <AppChamp
+                        ref="champEmail"
+                        v-model="email"
+                        libelle="Adresse e-mail"
+                        type="email"
+                        name="email"
+                        autocomplete="username"
+                        inputmode="email"
+                        :erreur="erreurs.email"
+                    />
+
+                    <AppChamp
+                        ref="champMotDePasse"
+                        v-model="motDePasse"
+                        libelle="Mot de passe"
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        :erreur="erreurs.motDePasse"
+                    />
+
+                    <button type="submit" class="btn btn-primary btn-block mt-2" :disabled="envoiEnCours">
+                        <span v-if="envoiEnCours" class="loading loading-spinner loading-sm" aria-hidden="true" />
+                        {{ envoiEnCours ? 'Connexion...' : 'Se connecter' }}
+                    </button>
+                </form>
+
+                <NuxtLink to="/" class="link link-hover link-secondary self-start text-sm">
+                    Retour au site
+                </NuxtLink>
             </div>
-
-            <p v-if="information && !erreurFormulaire" class="carte__information" role="status">
-                {{ information }}
-            </p>
-
-            <!--
-                Toujours présente dans le DOM pour que les lecteurs d'écran
-                annoncent le message dès qu'il y est inscrit.
-            -->
-            <p class="carte__erreur" role="alert">
-                {{ erreurFormulaire }}
-            </p>
-
-            <form class="formulaire" novalidate @submit.prevent="envoyer">
-                <AppChamp
-                    ref="champEmail"
-                    v-model="email"
-                    libelle="Adresse e-mail"
-                    type="email"
-                    name="email"
-                    autocomplete="username"
-                    inputmode="email"
-                    :erreur="erreurs.email"
-                />
-
-                <AppChamp
-                    ref="champMotDePasse"
-                    v-model="motDePasse"
-                    libelle="Mot de passe"
-                    type="password"
-                    name="password"
-                    autocomplete="current-password"
-                    :erreur="erreurs.motDePasse"
-                />
-
-                <button type="submit" class="bouton bouton--or formulaire__envoi" :disabled="envoiEnCours">
-                    {{ envoiEnCours ? 'Connexion...' : 'Se connecter' }}
-                </button>
-            </form>
-
-            <NuxtLink to="/" class="carte__retour">
-                Retour au site
-            </NuxtLink>
         </div>
     </main>
 </template>
-
-<style scoped>
-.connexion {
-    display: grid;
-    min-height: 100vh;
-    place-items: center;
-    padding: 40px 16px;
-}
-
-.carte {
-    display: flex;
-    width: 100%;
-    max-width: 400px;
-    flex-direction: column;
-    gap: 24px;
-    padding: 40px 32px;
-    border: 1px solid var(--bordure-default);
-    border-radius: 6px;
-    background-color: var(--fond-surface-teintee);
-}
-
-@media (max-width: 420px) {
-    .carte {
-        padding: 32px 22px;
-    }
-}
-
-.carte__tete {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.carte__rubrique {
-    margin-top: 14px;
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
-
-.carte__titre {
-    font-size: 40px;
-}
-
-.carte__information {
-    color: var(--texte-secondaire);
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.carte__erreur {
-    color: var(--terracotta);
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-/*
- * Vide, la zone sort du flux pour ne pas creuser d'espace dans la carte.
- * Elle n'est pas masquée par display: none, qui la retirerait de l'arbre
- * d'accessibilité : certains lecteurs d'écran n'annonceraient plus le
- * message à son apparition.
- */
-.carte__erreur:empty {
-    position: absolute;
-}
-
-.formulaire {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.formulaire__envoi {
-    justify-content: center;
-    margin-top: 6px;
-    border: 0;
-    cursor: pointer;
-}
-
-.formulaire__envoi:disabled {
-    cursor: progress;
-    opacity: 0.7;
-}
-
-.carte__retour {
-    align-self: flex-start;
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color var(--transition-courte);
-}
-
-.carte__retour:hover {
-    color: var(--texte-principal);
-}
-</style>
