@@ -46,6 +46,21 @@ Chacun de ces points a été rencontré pendant l'écriture des tests.
 | Vitest échoue de la même façon après une construction de production lancée dans le conteneur | La construction écrit dans des caches que l'environnement de test réutilise. | Dans le conteneur : `rm -rf node_modules/.cache/vite node_modules/.vitest-cache node_modules/.vite-temp`. |
 | Des tentatives de connexion échouées s'accumulent pendant les tests de bout en bout | `/api/login` verrouille un identifiant après 5 échecs en 15 minutes. CT-E2E-16 en provoque un volontairement à chaque passage. | Rien à faire : la connexion réussie qui suit remet le compteur à zéro. |
 
+## Synchronisation du 16 octobre 2026, après #33
+
+Synchronisation avec `main` au commit `2e571c3` : correctifs de l'audit d'accessibilité (#33, pull request #73). Fusion sans conflit.
+
+- **Ce qui a changé côté application** : boutons principaux en or profond, or vif réservé aux textes sur photo, voiles des héros et des tuiles renforcés, contour des champs plus marqué, bouton pause sur le bandeau des univers, quelques tailles de texte relevées.
+- **Ce qui a cassé** : rien. Les tests s'appuient sur les rôles, les intitulés et les classes d'accroche (`.bandeau`, `.tuile__categorie`, `champ--erreur`), qui n'ont pas changé, jamais sur des couleurs. Le nouveau bouton pause du bandeau n'entre dans aucun parcours au clavier testé.
+- **Trois passages consécutifs**, chacun identique au tableau ci-dessous.
+
+| Niveau | Tests | Résultat |
+|---|---|---|
+| PHP, unitaires et fonctionnels | 246 | verts, dont 2 en attente de décision |
+| Unitaires et composants front | 113 | tous verts |
+| Bout en bout | 19 | tous verts |
+| **Total** | **378** | **les 155 cas du plan sont couverts** |
+
 ## Synchronisation du 16 octobre 2026, après #68 et #71
 
 Synchronisation avec `main` aux commits `5d313d2` (site public migré vers daisyUI, #68) puis `74aa78d` (correctif #71). Fusions sans conflit.
