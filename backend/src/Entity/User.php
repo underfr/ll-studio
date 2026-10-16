@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Security\Role;
+use App\State\CurrentUserProvider;
 use App\State\UserPasswordHasherProcessor;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -36,6 +37,21 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(security: "is_granted('ROLE_ADMIN')", openapi: new OpenApiOperation(summary: 'Lister les comptes')),
         new Get(security: "is_granted('ROLE_ADMIN') or object == user", openapi: new OpenApiOperation(summary: 'Consulter un compte')),
+        // Compte du porteur du jeton (issue #62). Sans item_uri_template,
+        // la réponse porterait /api/me comme @id : un identifiant qui
+        // désigne un compte différent selon qui le lit. Le contexte renvoie
+        // vers l'IRI canonique /api/users/{id}.
+        new Get(
+            uriTemplate: '/me',
+            normalizationContext: ['groups' => ['user:read'], 'item_uri_template' => '/users/{id}{._format}'],
+            security: "is_granted('ROLE_USER')",
+            provider: CurrentUserProvider::class,
+            openapi: new OpenApiOperation(
+                summary: 'Consulter son propre compte',
+                description: "Renvoie le compte du porteur du jeton d'accès. Sert au back-office à vérifier la "
+                    .'session et à afficher le nom de la personne connectée.',
+            ),
+        ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
             processor: UserPasswordHasherProcessor::class,
