@@ -296,7 +296,7 @@ Règles d'écriture propres à Cypress :
 | CT-CF-02 | RG-LBX-02 | Suivant depuis la dernière ; précédent depuis la première ; mêmes gestes au clavier | index 0 ; index 4 ; mêmes résultats | P1 |
 | CT-CF-03 | RG-LBX-03 | Une seule photo | aucun bouton de navigation | P1 |
 | CT-CF-04 | RG-LBX-04 | Échap ; clic sur le fond ; clic sur la photo, la légende, une flèche | fermée ; fermée ; reste ouverte dans les trois cas | P1 |
-| CT-CF-05 | RG-LBX-05 | Ouverture depuis un bouton qui a le focus ; Tab sur le dernier bouton ; Maj+Tab sur le premier ; fermeture | focus sur la fermeture ; reste captif ; revient au bouton d'origine ; défilement bloqué puis rétabli | P1 |
+| CT-CF-05 | RG-LBX-05 | Ouverture depuis un bouton qui a le focus ; Tab sur le dernier bouton ; Maj+Tab sur le premier ; fermeture | focus sur la fermeture et dialogue ouvert en modal ; reste captif ; revient au bouton d'origine, dialogue retiré | P1 |
 | CT-CF-06 | RG-LBX-07 | Ouverture à l'index 0 sur 3 photos | les photos d'index 2 et 1 sont préchargées | P2 |
 | CT-CF-07 | RG-LBX-01 | Photo sans catégorie ni description | ni l'une ni l'autre n'est affichée | P2 |
 | CT-CF-10 | RG-TUI-01 | `AppCartePhoto` avec et sans légende | bouton « Agrandir : <titre> », texte alternatif, événement `ouvrir` au clic ; légende seulement quand `avecLegende` est vrai | P1 |
@@ -305,7 +305,7 @@ Règles d'écriture propres à Cypress :
 | CT-CF-13 | RG-GAL-02, RG-GAL-03 | `AppFiltresCategories` sur `/galerie?vue=grille&categorie=voiture` | « Tout » mène à `/galerie?vue=grille` ; « Spectacle » pose `categorie=spectacle` et garde `vue` ; `aria-current` sur l'actif | P1 |
 | CT-CF-14 | RG-SER-01 | Le même composant avec `base="/albums"` | liens vers `/albums` | P1 |
 | CT-CF-15 | RG-GAL-03 | `GalerieBascule` sur `/galerie?categorie=voiture` | Grille pose `vue=grille` et garde `categorie` ; Mosaïque retire `vue` et garde `categorie` ; `aria-current` sur l'actif | P1 |
-| CT-CF-20 | RG-NAV-03 | `AppMenuMobile` : ouverture, puis fermeture par Échap, par clic sur le voile, par clic sur un lien | à l'ouverture, focus sur la fermeture et panneau d'identifiant `menu-mobile` ; fermé dans chaque cas, focus rendu, défilement rétabli | P1 |
+| CT-CF-20 | RG-NAV-03 | `AppMenuMobile` : ouverture, puis fermeture par Échap, par clic sur le voile, par clic sur un lien | à l'ouverture, focus sur la fermeture, panneau d'identifiant `menu-mobile`, site (`#__nuxt`) inerte ; fermé dans chaque cas, focus rendu, site de nouveau actif | P1 |
 | CT-CF-21 | RG-NAV-01, RG-NAV-05, RG-NAV-06 | `AppEnTete` | quatre liens, bouton EN désactivé, lien Admin, `aria-controls="menu-mobile"` sur le burger | P1 |
 | CT-CF-22 | RG-NAV-01, RG-NAV-07 | `AppPiedDePage` | liens de navigation ; bloc Instagram non cliquable | P2 |
 | CT-CF-30 | RG-GAL-01, RG-GAL-04 | Galerie, API simulée : 30 photos au total, 24 renvoyées | « 30 photographies » et bouton « Charger plus » ; après clic, 48 demandées ; bouton absent quand tout est chargé | P1 |
@@ -334,12 +334,12 @@ Sur le jeu de référence décrit en section 5, après rechargement des fixtures
 |---|---|---|---|---|
 | CT-E2E-01 | RG-ACC-01, RG-ACC-02, RG-ACC-05 | Accueil | image d'ouverture égale à la photo la plus récente selon l'API ; 2 séries en vedette ; « Tout voir », « Voir la galerie », « Me réserver » et « Prendre contact » mènent aux pages prévues | P1 |
 | CT-E2E-02 | RG-NAV-01, RG-NAV-02 | Navigation par l'en-tête vers les quatre rubriques | page atteinte, entrée correspondante active | P1 |
-| CT-E2E-03 | RG-NAV-03 | En 375 px de large : ouvrir le menu et aller à Albums ; rouvrir, Échap | arrivée sur `/albums` ; menu fermé, focus sur le burger | P1 |
+| CT-E2E-03 | RG-NAV-03 | En 375 px de large : ouvrir le menu et aller à Albums ; rouvrir, Échap | arrivée sur `/albums` ; page sans défilement pendant l'ouverture, puis menu fermé, focus sur le burger, défilement rétabli | P1 |
 | CT-E2E-04 | RG-NAV-04 | Tab depuis le haut de la page, puis Entrée | lien « Aller au contenu » visible, puis focus sur le contenu principal | P2 |
 | CT-E2E-05 | RG-GAL-01, RG-GAL-04 | Galerie | 10 tuiles, « 10 photographies », pas de bouton « Charger plus » | P1 |
 | CT-E2E-06 | RG-GAL-02 | Filtre Spectacle, puis Tout, puis page précédente du navigateur | 5 tuiles et `?categorie=spectacle` ; 10 tuiles ; retour à 5 | P1 |
 | CT-E2E-07 | RG-GAL-03 | Mode grille, puis filtre Voiture, puis rechargement | `?vue=grille&categorie=voiture`, état conservé après rechargement | P1 |
-| CT-E2E-08 | RG-LBX-01, RG-LBX-02, RG-LBX-04, RG-LBX-05 | Galerie : ouvrir la 3e tuile, flèche droite, flèche gauche, Échap ; rouvrir, cliquer à côté de la photo | compteur « 3 / 10 », « 4 / 10 », « 3 / 10 », fermeture avec focus sur la tuile ; fermeture | P1 |
+| CT-E2E-08 | RG-LBX-01, RG-LBX-02, RG-LBX-04, RG-LBX-05 | Galerie : ouvrir la 3e tuile, flèche droite, flèche gauche, Échap ; rouvrir, cliquer à côté de la photo | compteur « 3 / 10 » et page sans défilement, « 4 / 10 », « 3 / 10 », fermeture avec focus sur la tuile et défilement rétabli ; fermeture | P1 |
 | CT-E2E-09 | RG-SER-01 | `/albums`, filtre Voiture, filtre Animaux | 2 séries ; 1 ; état vide | P1 |
 | CT-E2E-10 | RG-SER-02, RG-SER-03, RG-SER-08 | Carte Puy du Fou 2024, puis « Retour aux albums » | page de la série, « 6 photos », 6 tuiles, titre d'onglet ; retour sur `/albums` | P1 |
 | CT-E2E-11 | RG-VIS-01 | Parcours de toutes les pages publiques | aucun des deux titres de photos masquées n'apparaît | P0 |

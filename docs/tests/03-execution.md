@@ -46,6 +46,22 @@ Chacun de ces points a été rencontré pendant l'écriture des tests.
 | Vitest échoue de la même façon après une construction de production lancée dans le conteneur | La construction écrit dans des caches que l'environnement de test réutilise. | Dans le conteneur : `rm -rf node_modules/.cache/vite node_modules/.vitest-cache node_modules/.vite-temp`. |
 | Des tentatives de connexion échouées s'accumulent pendant les tests de bout en bout | `/api/login` verrouille un identifiant après 5 échecs en 15 minutes. CT-E2E-16 en provoque un volontairement à chaque passage. | Rien à faire : la connexion réussie qui suit remet le compteur à zéro. |
 
+## Synchronisation du 16 octobre 2026, après #68 et #71
+
+Synchronisation avec `main` aux commits `5d313d2` (site public migré vers daisyUI, #68) puis `74aa78d` (correctif #71). Fusions sans conflit.
+
+- **Ce qui a cassé** : 5 tests Vitest sur 113, tous sur des détails de l'ancienne implémentation de la visionneuse et du menu mobile. La visionneuse est devenue un `<dialog>` natif, sans attribut `role` explicite ni verrouillage par `body.style.overflow`, et n'est plus téléportée ; le menu mobile repose sur le `drawer` de daisyUI. Les assertions ont été réécrites sans être assouplies : CT-CF-20 vérifie désormais que tout le site devient inerte, CT-CF-01 et CT-CF-05 que le dialogue est réellement ouvert en modal.
+- **Défaut révélé** : CT-CF-01 a mis au jour une régression de #68. Une visionneuse montée déjà ouverte n'appelait jamais `showModal()` et restait invisible. Corrigée sur `main` par l'issue #71, sans toucher au test.
+- **Défilement** : il est désormais bloqué par la feuille de daisyUI, que l'environnement de Vitest n'applique pas. CT-E2E-03 et CT-E2E-08 le vérifient dans un vrai navigateur. Une mutation qui retire la classe `modal` de la visionneuse est détectée par CT-E2E-08.
+- **Test instable corrigé** : pendant les trois passages, CT-FB-42 a échoué une fois sur 246, sans lien avec daisyUI. La photo masquée du test recevait un titre tiré par Faker, qui pouvait se classer avant « Aurore boréale » et faire échouer le tri par titre. Le titre est maintenant fixé, et le tri vérifie l'ordre complet. Diagnostic confirmé en rejouant la graine fautive (`FOUNDRY_FAKER_SEED=831281`) : l'ancien test échoue, le nouveau passe.
+
+| Niveau | Tests | Résultat |
+|---|---|---|
+| PHP, unitaires et fonctionnels | 246 | verts, dont 2 en attente de décision |
+| Unitaires et composants front | 113 | tous verts |
+| Bout en bout | 19 | tous verts |
+| **Total** | **378** | **les 155 cas du plan sont couverts** |
+
 ## Synchronisation du 16 octobre 2026, après #67
 
 Synchronisation avec `main` au commit `951fc79` : socle Tailwind CSS et daisyUI, back-office migré (#67).
