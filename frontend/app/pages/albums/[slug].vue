@@ -63,7 +63,9 @@ useHead(() => ({
                 fetchpriority="high"
                 decoding="async"
             >
-            <div class="absolute inset-0 bg-linear-to-b from-neutral/40 to-neutral/90" />
+            <!-- Voile dense dès le retour aux albums : le surtitre doré y
+                 garde 4,5:1 quelle que soit la couverture (issue #33). -->
+            <div class="absolute inset-0 bg-linear-to-b from-neutral/50 via-neutral/80 via-45% to-neutral/90" />
 
             <div class="hero-content relative w-full max-w-none flex-col items-start gap-4 px-5.5 pb-9 bureau:px-10 bureau:pb-11">
                 <NuxtLink
@@ -74,7 +76,7 @@ useHead(() => ({
                 </NuxtLink>
 
                 <div class="flex flex-col gap-2">
-                    <p class="font-mono text-[11px] uppercase tracking-[4px] text-primary">
+                    <p class="font-mono text-[11px] uppercase tracking-[4px] text-accent">
                         {{ album.category.name }} · {{ nombrePhotos }}
                         {{ nombrePhotos > 1 ? 'photos' : 'photo' }}
                     </p>

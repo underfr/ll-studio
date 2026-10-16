@@ -26,15 +26,26 @@
     --color-base-300: #e4dccc;
     --color-base-content: #12100c;
 
-    /* Or vif pour les actions, texte encre dessus (contraste 7,9:1). */
-    --color-primary: #c9a24b;
-    --color-primary-content: #12100c;
+    /*
+     * Or profond pour les actions, texte crème dessus (issue #33). L'or vif
+     * de la maquette, de luminance moyenne, ne portait bien ni l'encre ni le
+     * crème : 7,9:1 avec l'encre selon WCAG 2, mais Lc 56 seulement selon
+     * APCA, sous le seuil d'un libellé de bouton. L'or profond donne 5,7:1 et
+     * Lc 80, et son anneau de focus reste visible sur le crème.
+     */
+    --color-primary: #7a5e18;
+    --color-primary-content: #faf7f1;
 
-    /* Or profond pour les libellés et les liens (5,7:1 sur le fond). */
+    /* Or profond aussi pour les libellés et les liens (5,7:1 sur le fond). */
     --color-secondary: #7a5e18;
     --color-secondary-content: #f4f0e8;
-    --color-accent: #7a5e18;
-    --color-accent-content: #f4f0e8;
+
+    /*
+     * Or vif, réservé aux textes et aux détails posés sur fond sombre
+     * (photos, visionneuse) : 7,9:1 sur l'encre, 2,2:1 seulement sur le crème.
+     */
+    --color-accent: #c9a24b;
+    --color-accent-content: #12100c;
 
     --color-neutral: #12100c;
     --color-neutral-content: #f4f0e8;
@@ -42,7 +53,8 @@
     /*
      * Messages : absents du Figma, choisis dans le registre de la palette,
      * tous au-dessus de 5:1 avec leur texte. Provisoires, à valider puis à
-     * reporter dans le Figma.
+     * reporter dans le Figma. L'orangé « warning » n'atteint que 3:1 sur le
+     * fond : il sert de fond aux alertes, jamais de couleur de texte.
      */
     --color-info: #3e5c76;
     --color-info-content: #f4f0e8;
@@ -164,7 +176,8 @@
 
     /*
      * Anneau de focus commun aux éléments que daisyUI ne stylise pas (liens,
-     * tuiles). Il reste visible sur fond clair comme sur l'or.
+     * tuiles) : 5,7:1 sur le crème, 5:1 sur la surface teintée. Sur une
+     * photo, les éléments le passent en crème (focus-visible:outline-*).
      */
     :focus-visible {
         outline: 2px solid var(--color-secondary);

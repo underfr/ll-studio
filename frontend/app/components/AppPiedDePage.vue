@@ -23,10 +23,10 @@ const annee = new Date().getFullYear()
     <footer class="pied border-t border-base-300 bg-base-200">
         <div class="mx-auto max-w-360 px-5.5 pt-12 pb-9 bureau:px-10">
             <div class="footer items-end gap-7 tablette:footer-horizontal">
-                <aside class="flex flex-col gap-2.5">
+                <div class="flex flex-col gap-2.5">
                     <AppLogo taille="desktop" />
-                    <p class="surtitre text-[10px]">Photographe · Multimédia</p>
-                </aside>
+                    <p class="surtitre">Photographe · Multimédia</p>
+                </div>
 
                 <nav class="flex flex-wrap gap-4 tablette:justify-self-end tablette:gap-6" aria-label="Navigation de pied de page">
                     <NuxtLink
@@ -43,7 +43,7 @@ const annee = new Date().getFullYear()
 
             <!-- Filet plus ténu que celui du haut : il sépare sans découper. -->
             <div class="footer mt-8 items-center gap-4 border-t border-base-content/10 pt-5 tablette:footer-horizontal">
-                <p class="font-mono text-[10px] tracking-[1px] text-base-content/60">
+                <p class="font-mono text-[11px] tracking-[1px] text-base-content/60">
                     © {{ annee }} LL Studio. Tous droits réservés.
                 </p>
 

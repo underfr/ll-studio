@@ -21,17 +21,18 @@ defineProps<{ photo?: Photo }>()
         >
 
         <!--
-            Le voile diffère entre les deux maquettes : sur mobile le texte
-            occupe une plus grande part de l'image, le dégradé y est donc plus
-            dense en bas. La photographie vient de l'API et peut être très
-            lumineuse : le contraste réel sera mesuré par l'audit (#33).
+            La photographie vient de l'API et peut être très lumineuse. Le
+            voile est donc déjà dense là où commence le texte, au tiers de la
+            hauteur : le surtitre doré, le plus fragile, y garde 4,5:1 sur les
+            douze photos de démonstration, mobile comme bureau (issue #33).
+            Les maquettes laissaient la photo à nu à cet endroit.
         -->
         <div
-            class="ouverture__voile absolute inset-0 bg-linear-to-b from-neutral/40 via-neutral/0 via-40% to-neutral/90 bureau:from-neutral/55 bureau:via-neutral/5 bureau:via-35% bureau:to-neutral/85"
+            class="ouverture__voile absolute inset-0 bg-linear-to-b from-neutral/30 via-neutral/80 via-35% to-neutral/90 bureau:from-neutral/50 bureau:via-neutral/75 bureau:to-neutral/85"
         />
 
         <div class="ouverture__copy hero-content relative w-full max-w-none flex-col items-start justify-end px-5.5 pb-10 bureau:px-10 bureau:pb-14">
-            <p class="font-mono text-[clamp(10px,1vw,12px)] uppercase tracking-[clamp(3px,0.4vw,5px)] text-primary">
+            <p class="font-mono text-[clamp(11px,1vw,12px)] uppercase tracking-[clamp(3px,0.4vw,5px)] text-accent">
                 Photographe · Multimédia
             </p>
 
@@ -46,10 +47,12 @@ defineProps<{ photo?: Photo }>()
 
             <!-- Sur mobile la maquette empile les boutons pleine largeur. -->
             <div class="mt-1.5 flex w-full flex-col gap-3.5 tablette:w-auto tablette:flex-row">
-                <NuxtLink to="/galerie" class="btn btn-primary">Voir la galerie</NuxtLink>
+                <!-- Sur la photo, l'anneau de focus passe en crème : l'or
+                     profond des boutons n'y ressortirait pas. -->
+                <NuxtLink to="/galerie" class="btn btn-primary focus-visible:outline-neutral-content">Voir la galerie</NuxtLink>
                 <NuxtLink
                     to="/contact"
-                    class="btn btn-outline border-neutral-content/50 text-neutral-content hover:border-neutral-content hover:bg-neutral-content/10 focus-visible:border-neutral-content focus-visible:bg-neutral-content/10 active:bg-neutral-content/20"
+                    class="btn btn-outline border-neutral-content/50 text-neutral-content hover:border-neutral-content hover:bg-neutral-content/10 focus-visible:border-neutral-content focus-visible:bg-neutral-content/10 focus-visible:outline-neutral-content active:bg-neutral-content/20"
                 >
                     Me réserver
                 </NuxtLink>

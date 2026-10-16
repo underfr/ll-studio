@@ -37,7 +37,7 @@ const chiffres = computed(() => [
 
             <dl class="apropos__chiffres stats stats-horizontal w-fit bg-base-100 shadow-sm">
                 <div v-for="chiffre in chiffres" :key="chiffre.libelle" class="stat px-5 py-3">
-                    <dt class="stat-title font-mono text-[10px] uppercase tracking-[2px]">{{ chiffre.libelle }}</dt>
+                    <dt class="stat-title font-mono text-[11px] uppercase tracking-[2px]">{{ chiffre.libelle }}</dt>
                     <dd class="stat-value font-display font-medium text-secondary">{{ chiffre.valeur }}</dd>
                 </div>
             </dl>

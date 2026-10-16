@@ -64,9 +64,14 @@ const revelation = computed(() => enGrille.value
             decoding="async"
         >
 
+        <!--
+            Voile déjà dense à mi-hauteur : en grille, la catégorie dorée
+            remonte jusque-là quand le titre tient sur deux lignes. Elle y
+            garde 4,5:1 sur les douze photos de démonstration (issue #33).
+        -->
         <span
             v-if="avecLegende"
-            class="tuile__voile pointer-events-none absolute inset-0 bg-linear-to-b from-neutral/0 from-55% to-neutral/85"
+            class="tuile__voile pointer-events-none absolute inset-0 bg-linear-to-b from-neutral/0 from-15% via-neutral/80 via-55% to-neutral/90"
             :class="revelation"
         />
 
@@ -76,7 +81,7 @@ const revelation = computed(() => enGrille.value
             class="tuile__legende pointer-events-none absolute flex flex-col"
             :class="[enGrille ? 'inset-x-4.5 bottom-4.5' : 'inset-x-3.5 bottom-3.5', revelation]"
         >
-            <span v-if="photo.category" class="tuile__categorie font-mono text-[9px] uppercase tracking-[2px] text-primary">{{ photo.category.name }}</span>
+            <span v-if="photo.category" class="tuile__categorie font-mono text-[11px] uppercase tracking-[2px] text-accent">{{ photo.category.name }}</span>
             <span
                 class="tuile__titre font-display font-medium leading-tight text-neutral-content"
                 :class="enGrille ? 'text-2xl' : 'text-xl'"

@@ -158,7 +158,7 @@ async function seDeconnecter(): Promise<void> {
                 <div class="flex items-start justify-between gap-4">
                     <div class="flex flex-col gap-2">
                         <AppLogo cible="/admin" libelle="LL Studio, tableau de bord de l'administration" @click="fermerMenu(false)" />
-                        <p class="font-mono text-xs uppercase tracking-[0.3em] text-base-content/50">
+                        <p class="font-mono text-xs uppercase tracking-[0.3em] text-base-content/70">
                             Administration
                         </p>
                     </div>

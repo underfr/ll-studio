@@ -55,7 +55,7 @@ const photoOuverte = ref<number | null>(null)
 
         <AppFiltresCategories :categories="universDisponibles" :actif="categorieActive" base="/galerie" />
 
-        <p class="galerie__compte mt-5.5 mb-4 font-mono text-[10px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
+        <p class="galerie__compte mt-5.5 mb-4 font-mono text-[11px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
             {{ total }} {{ total > 1 ? 'photographies' : 'photographie' }}
         </p>
 
