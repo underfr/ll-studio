@@ -2,8 +2,11 @@
  * Instance $fetch préconfigurée pour l'API du portfolio.
  *
  * Centraliser la configuration ici plutôt que de la répéter à chaque appel
- * évite qu'une requête oublie l'URL de base ou l'en-tête Accept, et donne un
- * point unique où brancher le jeton d'authentification (issue #25).
+ * évite qu'une requête oublie l'URL de base ou l'en-tête Accept.
+ *
+ * L'instance reste anonyme : le site public n'envoie jamais de jeton. Les
+ * requêtes du back-office passent par useSession().requete, qui ajoute le
+ * jeton d'accès et le renouvelle à l'expiration (issue #25).
  */
 export default defineNuxtPlugin(() => {
     const config = useRuntimeConfig()

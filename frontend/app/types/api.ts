@@ -76,6 +76,18 @@ export interface Message extends RessourceJsonLd {
     createdAt: string
 }
 
+/** Compte du back-office, tel que le renvoie GET /api/me. */
+export interface Compte extends RessourceJsonLd {
+    id: number
+    email: string
+    firstName: string
+    lastName: string
+    fullName: string
+    /** Présents pour un administrateur, masqués par l'API aux autres comptes. */
+    roles?: string[]
+    createdAt: string
+}
+
 /** Corps d'erreur renvoyé par l'API, aussi bien Hydra que Problem Details. */
 export interface ErreurApi {
     status?: number

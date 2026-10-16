@@ -5,6 +5,21 @@ export default defineNuxtConfig({
 
     css: ['~/assets/css/tokens.css'],
 
+    routeRules: {
+        /*
+         * Le back-office est rendu côté navigateur uniquement (issue #25).
+         * Il n'a pas besoin de référencement, et le serveur Nuxt n'a ainsi
+         * jamais à manipuler de jeton : le jeton d'accès vit dans la mémoire
+         * de l'onglet, le jeton de rafraîchissement dans un cookie HttpOnly
+         * que seule l'API lit.
+         *
+         * L'en-tête X-Robots-Tag double la balise robots du gabarit, que les
+         * robots ne verraient pas sans exécuter JavaScript.
+         */
+        '/admin': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+        '/admin/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    },
+
     runtimeConfig: {
         /*
          * Origine de l'API vue depuis le serveur Nuxt. Sous Docker, il joint

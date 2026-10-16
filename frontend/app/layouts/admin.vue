@@ -11,6 +11,14 @@
  * geste, sans panneau à ouvrir ni piège de focus à maintenir.
  */
 const { liens, estActif } = useNavigationAdmin()
+const { compte, deconnecter } = useSession()
+const deconnexionEnCours = ref(false)
+
+async function seDeconnecter(): Promise<void> {
+    deconnexionEnCours.value = true
+    await deconnecter()
+    await navigateTo('/admin/connexion')
+}
 
 const route = useRoute()
 const navigation = ref<HTMLElement | null>(null)
@@ -68,6 +76,19 @@ useHead({
             </nav>
 
             <div class="barre__pied">
+                <p v-if="compte" class="barre__compte">
+                    {{ compte.fullName }}
+                </p>
+
+                <button
+                    type="button"
+                    class="barre__deconnexion"
+                    :disabled="deconnexionEnCours"
+                    @click="seDeconnecter"
+                >
+                    Se déconnecter
+                </button>
+
                 <NuxtLink to="/" class="barre__site">
                     Voir le site
                 </NuxtLink>
@@ -121,6 +142,35 @@ useHead({
     align-items: center;
     gap: 16px;
     grid-area: pied;
+}
+
+/* Le nom du compte est réservé à la barre latérale : sur mobile, la place
+   manque et le tableau de bord salue déjà la personne connectée. */
+.barre__compte {
+    display: none;
+    color: var(--texte-principal);
+    font-size: 14px;
+}
+
+.barre__deconnexion {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--texte-secondaire);
+    cursor: pointer;
+    font-family: var(--police-ui);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color var(--transition-courte);
+}
+
+.barre__deconnexion:hover {
+    color: var(--terracotta);
+}
+
+.barre__deconnexion:disabled {
+    cursor: progress;
 }
 
 .barre__site {
@@ -214,6 +264,13 @@ useHead({
     .barre__pied {
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--bordure-tenue);
+    }
+
+    .barre__compte {
+        display: block;
     }
 
     .nav {
