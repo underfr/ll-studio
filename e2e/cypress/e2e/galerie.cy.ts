@@ -62,6 +62,9 @@ describe('Galerie', () => {
             tuiles().eq(2).click()
             cy.findByRole('dialog').should('exist')
             cy.findByText(`3 / ${total}`).should('exist')
+            // Défilement bloqué pendant l'ouverture, par la feuille de
+            // daisyUI depuis #68.
+            cy.get('html').should('have.css', 'overflow', 'hidden')
 
             cy.realPress('ArrowRight')
             cy.findByText(`4 / ${total}`).should('exist')
@@ -73,6 +76,7 @@ describe('Galerie', () => {
             tuiles().eq(2).then(($tuile) => {
                 cy.focused().should('have.attr', 'aria-label', $tuile.attr('aria-label'))
             })
+            cy.get('html').should('not.have.css', 'overflow', 'hidden')
 
             tuiles().eq(2).click()
             cy.findByRole('dialog').click('topLeft')
