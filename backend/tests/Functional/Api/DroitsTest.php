@@ -57,6 +57,7 @@ final class DroitsTest extends FunctionalTestCase
         'supprimer un message' => ['DELETE message', [401, 403, 403, 204]],
         'lister les comptes' => ['GET comptes', [401, 403, 403, 200]],
         'consulter son compte' => ['GET compte-soi', [401, 200, 200, 200]],
+        'consulter son compte par /api/me' => ['GET moi', [401, 200, 200, 200]],
         'consulter le compte d\'un autre' => ['GET compte-autre', [401, 403, 403, 200]],
         'créer un compte' => ['POST compte', [401, 403, 403, 201]],
         'modifier son compte' => ['PATCH compte-soi', [401, 200, 200, 200]],
@@ -211,6 +212,7 @@ final class DroitsTest extends FunctionalTestCase
             'compte' => '/api/users',
             'compte-soi' => '/api/users/'.$soi->getId(),
             'compte-autre' => '/api/users/'.$monde['tiers']->getId(),
+            'moi' => '/api/me',
         };
 
         if ('POST' === $methode && 'photo' === $cible) {

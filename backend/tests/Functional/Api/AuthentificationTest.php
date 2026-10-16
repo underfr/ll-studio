@@ -11,12 +11,16 @@ use App\Tests\Functional\FunctionalTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use PHPUnit\Framework\Attributes\TestDox;
+use Symfony\Component\BrowserKit\Cookie as CookieNavigateur;
+use Symfony\Component\HttpFoundation\Cookie;
 
 /**
  * Authentification, règles RG-AUTH.
  *
- * Ces tests passent par les vraies routes /api/login et /api/token/refresh,
- * limiteur de tentatives compris.
+ * Ces tests passent par les vraies routes /api/login, /api/token/refresh et
+ * /api/token/invalidate, limiteur de tentatives compris. Le jeton de
+ * rafraîchissement circule par cookie (issue #62) : le client de test le
+ * conserve et le renvoie comme le ferait un navigateur.
  */
 final class AuthentificationTest extends FunctionalTestCase
 {
@@ -28,12 +32,13 @@ final class AuthentificationTest extends FunctionalTestCase
     public function testConnexionValide(): void
     {
         $compte = UserFactory::createOne();
+        $client = $this->anonyme();
 
-        $reponse = $this->connexion($this->anonyme(), $compte->getEmail(), self::MOT_DE_PASSE);
+        $reponse = $this->connexion($client, $compte->getEmail(), self::MOT_DE_PASSE);
 
         self::assertResponseStatusCodeSame(200);
         self::assertNotEmpty($reponse['token'] ?? null);
-        self::assertNotEmpty($reponse['refresh_token'] ?? null);
+        self::assertNotEmpty($this->jetonDeRafraichissement($client));
     }
 
     #[TestDox('CT-FB-12 · un mauvais mot de passe et une adresse inconnue reçoivent la même réponse')]
@@ -99,14 +104,17 @@ final class AuthentificationTest extends FunctionalTestCase
     {
         $compte = UserFactory::createOne();
         $client = $this->anonyme();
-        $premier = $this->connexion($client, $compte->getEmail(), self::MOT_DE_PASSE)['refresh_token'];
+        $this->connexion($client, $compte->getEmail(), self::MOT_DE_PASSE);
+        $premier = $this->jetonDeRafraichissement($client);
 
-        $renouvele = $client->request('POST', '/api/token/refresh', ['json' => ['refresh_token' => $premier]])->toArray();
+        // Sans corps : le cookie suffit.
+        $renouvele = $client->request('POST', '/api/token/refresh')->toArray();
         self::assertResponseStatusCodeSame(200);
         self::assertNotEmpty($renouvele['token']);
-        self::assertNotSame($premier, $renouvele['refresh_token']);
+        self::assertNotSame($premier, $this->jetonDeRafraichissement($client));
 
-        $client->request('POST', '/api/token/refresh', ['json' => ['refresh_token' => $premier]]);
+        $this->presenterJeton($client, $premier);
+        $client->request('POST', '/api/token/refresh');
         self::assertResponseStatusCodeSame(401);
     }
 
@@ -153,6 +161,85 @@ final class AuthentificationTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
+    #[TestDox('CT-FB-26 · le jeton de rafraîchissement voyage dans un cookie HttpOnly, SameSite=Strict, limité à /api/token')]
+    public function testJetonDeRafraichissementEnCookie(): void
+    {
+        $compte = UserFactory::createOne();
+        $client = $this->anonyme();
+
+        $reponse = $this->connexion($client, $compte->getEmail(), self::MOT_DE_PASSE);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertArrayNotHasKey('refresh_token', $reponse);
+
+        $cookie = $this->cookieRecu($client);
+        self::assertNotNull($cookie);
+        self::assertTrue($cookie->isHttpOnly());
+        self::assertSame(Cookie::SAMESITE_STRICT, $cookie->getSameSite());
+        self::assertSame('/api/token', $cookie->getPath());
+        // Secure est désactivé en test, qui tourne en HTTP ; la production
+        // le garde (RG-AUTH-11).
+        self::assertFalse($cookie->isSecure());
+    }
+
+    #[TestDox('CT-FB-27 · la déconnexion révoque le jeton de rafraîchissement et efface le cookie')]
+    public function testDeconnexion(): void
+    {
+        $compte = UserFactory::createOne();
+        $client = $this->anonyme();
+        $this->connexion($client, $compte->getEmail(), self::MOT_DE_PASSE);
+        $jeton = $this->jetonDeRafraichissement($client);
+
+        $client->request('POST', '/api/token/invalidate');
+        self::assertResponseStatusCodeSame(200);
+        self::assertTrue($this->cookieRecu($client)?->isCleared());
+
+        $this->presenterJeton($client, $jeton);
+        $client->request('POST', '/api/token/refresh');
+        self::assertResponseStatusCodeSame(401);
+
+        $this->anonyme()->request('POST', '/api/token/invalidate');
+        self::assertResponseStatusCodeSame(400);
+
+        $this->anonyme()->request('GET', '/api/token/invalidate');
+        self::assertResponseStatusCodeSame(405);
+    }
+
+    #[TestDox('CT-FB-28 · /api/me renvoie le compte du porteur du jeton sous son IRI canonique')]
+    public function testCompteCourant(): void
+    {
+        $admin = UserFactory::new()->admin()->create();
+        $moi = $this->connecte($admin)->request('GET', '/api/me')->toArray();
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame('/api/users/'.$admin->getId(), $moi['@id']);
+        self::assertSame($admin->getEmail(), $moi['email']);
+        self::assertContains('ROLE_ADMIN', $moi['roles']);
+
+        $compte = UserFactory::createOne();
+        $lui = $this->connecte($compte)->request('GET', '/api/me')->toArray();
+        self::assertSame('/api/users/'.$compte->getId(), $lui['@id']);
+        self::assertArrayNotHasKey('roles', $lui);
+
+        $this->anonyme()->request('GET', '/api/me');
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    #[TestDox('CT-FB-29 · les requêtes avec identifiants ne sont autorisées qu\'aux origines prévues')]
+    public function testCorsAvecIdentifiants(): void
+    {
+        $preflight = fn (string $origine) => $this->anonyme()->request('OPTIONS', '/api/token/refresh', [
+            'headers' => ['Origin' => $origine, 'Access-Control-Request-Method' => 'POST'],
+        ]);
+
+        $preflight('http://localhost:3000');
+        self::assertResponseHeaderSame('access-control-allow-origin', 'http://localhost:3000');
+        self::assertResponseHeaderSame('access-control-allow-credentials', 'true');
+
+        $preflight('https://site-tiers.example');
+        self::assertResponseNotHasHeader('access-control-allow-origin');
+    }
+
     #[TestDox('CT-FB-20 · aucune réponse sur les comptes ne contient de mot de passe')]
     public function testMotDePasseJamaisRenvoye(): void
     {
@@ -187,6 +274,30 @@ final class AuthentificationTest extends FunctionalTestCase
         return $client->request('POST', '/api/login', [
             'json' => ['email' => $email, 'password' => $motDePasse],
         ])->toArray(false);
+    }
+
+    /** Cookie du jeton de rafraîchissement posé par la dernière réponse. */
+    private function cookieRecu(Client $client): ?Cookie
+    {
+        foreach ($client->getKernelBrowser()->getResponse()->headers->getCookies() as $cookie) {
+            if ('refresh_token' === $cookie->getName()) {
+                return $cookie;
+            }
+        }
+
+        return null;
+    }
+
+    /** Jeton de rafraîchissement que le client renverrait, comme un navigateur. */
+    private function jetonDeRafraichissement(Client $client): ?string
+    {
+        return $client->getKernelBrowser()->getCookieJar()->get('refresh_token', '/api/token')?->getValue();
+    }
+
+    /** Remplace le cookie du client, pour rejouer un ancien jeton. */
+    private function presenterJeton(Client $client, string $jeton): void
+    {
+        $client->getKernelBrowser()->getCookieJar()->set(new CookieNavigateur('refresh_token', $jeton, null, '/api/token'));
     }
 
     /** Provoque le verrouillage d'un identifiant et rend le client utilisé. */

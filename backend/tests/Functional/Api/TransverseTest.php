@@ -25,6 +25,25 @@ final class TransverseTest extends FunctionalTestCase
         self::assertSame('/api/photos?page=2', $reponse['view']['next']);
     }
 
+    #[TestDox('CT-FB-92 · la documentation OpenAPI décrit la connexion, le rafraîchissement, la déconnexion et /api/me')]
+    public function testDocumentationDeLaSession(): void
+    {
+        $chemins = $this->anonyme()->request('GET', '/api/docs.jsonopenapi', [
+            'headers' => ['Accept' => 'application/vnd.openapi+json'],
+        ])->toArray()['paths'];
+
+        self::assertArrayHasKey('post', $chemins['/api/login']);
+        self::assertArrayHasKey('post', $chemins['/api/token/refresh']);
+        self::assertArrayNotHasKey('requestBody', $chemins['/api/token/refresh']['post'], 'le jeton vient du cookie, pas du corps');
+
+        $deconnexion = $chemins['/api/token/invalidate']['post'];
+        self::assertSame('Ferme la session en cours', $deconnexion['summary']);
+        self::assertArrayHasKey('200', $deconnexion['responses']);
+        self::assertArrayHasKey('400', $deconnexion['responses']);
+
+        self::assertSame('Consulter son propre compte', $chemins['/api/me']['get']['summary']);
+    }
+
     #[TestDox('CT-FB-91 · format JSON simple (en attente, RG-Q-05)')]
     public function testFormatJsonSimple(): void
     {
