@@ -2,52 +2,51 @@
 import type { Photo } from '~/types/api'
 
 /**
- * Section de présentation. Le compteur « Univers » vient des catégories de
- * l'API plutôt que d'être figé : il reste juste quand le photographe en
- * ajoute une.
+ * Section de présentation. Les chiffres sont des « stats » de daisyUI. Le
+ * compteur « Univers » vient des catégories de l'API plutôt que d'être figé :
+ * il reste juste quand le photographe en ajoute une.
  */
-defineProps<{
+const props = defineProps<{
     photo?: Photo
     nombreUnivers: number
 }>()
+
+const chiffres = computed(() => [
+    { libelle: 'Séances', valeur: '120+' },
+    { libelle: 'Univers', valeur: String(props.nombreUnivers) },
+    { libelle: 'Ans', valeur: '8' },
+])
 </script>
 
 <template>
-    <section class="apropos">
-        <div class="apropos__texte">
-            <div class="apropos__copy">
-                <p class="apropos__kicker">À propos</p>
+    <section class="apropos grid border-t border-base-300 bureau:grid-cols-2">
+        <div class="order-2 flex min-h-[420px] flex-col justify-center gap-9 px-5.5 py-14 bureau:order-1 bureau:px-10 bureau:py-20">
+            <div class="flex flex-col gap-4.5">
+                <p class="surtitre">À propos</p>
 
-                <h2 class="apropos__titre">
+                <h2 class="max-w-[16ch] font-display text-[clamp(34px,3.6vw,52px)] leading-[1.05] tracking-[-1px]">
                     Chaque cadrage est une décision, jamais un hasard.
                 </h2>
 
-                <p class="apropos__bio">
+                <p class="max-w-[440px] text-[clamp(15px,1.1vw,16px)] leading-relaxed text-base-content/70">
                     Basé entre la ville et la nuit, je travaille l'obscurité comme une
                     matière, des aurores boréales aux fosses de concert, de la Voie lactée
                     aux carrosseries chromées. Mon obsession : la texture de la lumière.
                 </p>
             </div>
 
-            <dl class="apropos__chiffres">
-                <div>
-                    <dd>120+</dd>
-                    <dt>Séances</dt>
-                </div>
-                <div>
-                    <dd>{{ nombreUnivers }}</dd>
-                    <dt>Univers</dt>
-                </div>
-                <div>
-                    <dd>8</dd>
-                    <dt>Ans</dt>
+            <dl class="apropos__chiffres stats stats-horizontal w-fit bg-base-100 shadow-sm">
+                <div v-for="chiffre in chiffres" :key="chiffre.libelle" class="stat px-5 py-3">
+                    <dt class="stat-title font-mono text-[10px] uppercase tracking-[2px]">{{ chiffre.libelle }}</dt>
+                    <dd class="stat-value font-display font-medium text-secondary">{{ chiffre.valeur }}</dd>
                 </div>
             </dl>
         </div>
 
-        <div class="apropos__visuel">
+        <div class="apropos__visuel order-1 min-h-[260px] bureau:order-2 bureau:min-h-[420px] bureau:border-l bureau:border-base-300">
             <img
                 v-if="photo"
+                class="size-full object-cover"
                 :src="urlMedia(photo.contentUrl)"
                 :alt="photo.alt"
                 loading="lazy"
@@ -56,117 +55,3 @@ defineProps<{
         </div>
     </section>
 </template>
-
-<style scoped>
-.apropos {
-    display: grid;
-    border-top: 1px solid var(--bordure-default);
-    grid-template-columns: 1fr;
-}
-
-@media (min-width: 900px) {
-    .apropos {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-.apropos__texte {
-    display: flex;
-    min-height: 420px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 36px;
-    padding: 56px var(--gouttiere);
-    order: 2;
-}
-
-@media (min-width: 900px) {
-    .apropos__texte {
-        padding: 80px var(--gouttiere);
-        order: 1;
-    }
-}
-
-.apropos__copy {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.apropos__kicker {
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: clamp(10px, 0.9vw, 11px);
-    letter-spacing: clamp(3px, 0.35vw, 4px);
-    text-transform: uppercase;
-}
-
-.apropos__titre {
-    max-width: 16ch;
-    font-size: clamp(34px, 3.6vw, 52px);
-    letter-spacing: -1px;
-    line-height: 1.05;
-}
-
-.apropos__bio {
-    max-width: 440px;
-    color: var(--texte-secondaire);
-    font-size: clamp(15px, 1.1vw, 16px);
-    line-height: 1.65;
-}
-
-.apropos__chiffres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 28px;
-    margin: 0;
-}
-
-@media (min-width: 900px) {
-    .apropos__chiffres {
-        gap: 44px;
-    }
-}
-
-.apropos__chiffres div {
-    display: flex;
-    flex-direction: column;
-}
-
-/* dd avant dt dans le flux visuel : le chiffre domine, le libellé le qualifie. */
-.apropos__chiffres dd {
-    margin: 0;
-    color: var(--or-texte);
-    font-family: var(--police-titre);
-    font-size: clamp(38px, 3vw, 44px);
-    font-weight: 500;
-    line-height: 1;
-}
-
-.apropos__chiffres dt {
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: clamp(9px, 0.8vw, 10px);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-.apropos__visuel {
-    min-height: 260px;
-    order: 1;
-}
-
-@media (min-width: 900px) {
-    .apropos__visuel {
-        min-height: 420px;
-        border-left: 1px solid var(--bordure-default);
-        order: 2;
-    }
-}
-
-.apropos__visuel img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-</style>

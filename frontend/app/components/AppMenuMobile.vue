@@ -1,10 +1,16 @@
 <script setup lang="ts">
 /**
- * Panneau de navigation latéral mobile (maquette « Menu latéral · mobile »).
+ * Menu mobile du site public, sur le « drawer » de daisyUI.
  *
- * Le panneau est rendu dans un <Teleport> vers <body> : il échappe ainsi au
- * contexte d'empilement de l'en-tête et peut couvrir la page sans dépendre
- * d'un z-index arbitraire.
+ * Le panneau est téléporté dans <body> : l'en-tête qui le déclenche applique
+ * un flou d'arrière-plan, qui ferait du panneau fixe un prisonnier de sa
+ * boîte. Hors de #__nuxt, il peut aussi rendre tout le site inerte sans
+ * l'être lui-même.
+ *
+ * daisyUI fournit le panneau, le voile, la transition et le blocage du
+ * défilement. Le reste est ajouté ici (RG-NAV-03) : focus sur la fermeture
+ * dès que le panneau est visible, gardé dans le panneau, Échap pour fermer,
+ * focus rendu au bouton qui l'avait ouvert, page inerte pendant l'ouverture.
  */
 const ouvert = defineModel<boolean>('ouvert', { required: true })
 
@@ -20,10 +26,6 @@ function fermer(): void {
     ouvert.value = false
 }
 
-/**
- * Échap ferme le panneau, et Tab reste captif à l'intérieur : sans ça, le
- * focus clavier partirait derrière le voile, sur des liens invisibles.
- */
 function surTouche(evenement: KeyboardEvent): void {
     if (!ouvert.value) {
         return
@@ -36,206 +38,126 @@ function surTouche(evenement: KeyboardEvent): void {
         return
     }
 
-    if (evenement.key !== 'Tab' || !panneau.value) {
-        return
-    }
+    piegerTabulation(evenement, panneau.value)
+}
 
-    const focusables = panneau.value.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled])',
-    )
+/** Le site entier vit dans #__nuxt ; le panneau, téléporté, n'en fait pas partie. */
+function rendreLaPageInerte(inerte: boolean): void {
+    document.getElementById('__nuxt')?.toggleAttribute('inert', inerte)
+}
 
-    if (focusables.length === 0) {
-        return
-    }
-
-    const premier = focusables[0]!
-    const dernier = focusables[focusables.length - 1]!
-
-    if (evenement.shiftKey && document.activeElement === premier) {
-        evenement.preventDefault()
-        dernier.focus()
-    }
-    else if (!evenement.shiftKey && document.activeElement === dernier) {
-        evenement.preventDefault()
-        premier.focus()
+// Au-delà de 900 px, l'en-tête desktop reprend la main : le menu se ferme.
+let largeEcran: MediaQueryList | null = null
+const surChangementDeLargeur = (requete: MediaQueryListEvent) => {
+    if (requete.matches) {
+        fermer()
     }
 }
 
-onMounted(() => document.addEventListener('keydown', surTouche))
-onBeforeUnmount(() => document.removeEventListener('keydown', surTouche))
+onMounted(() => {
+    document.addEventListener('keydown', surTouche)
+    largeEcran = window.matchMedia('(min-width: 900px)')
+    largeEcran.addEventListener('change', surChangementDeLargeur)
+})
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', surTouche)
+    largeEcran?.removeEventListener('change', surChangementDeLargeur)
+    // Filet de sécurité : la page ne doit jamais rester inerte.
+    rendreLaPageInerte(false)
+})
 
 watch(ouvert, async (estOuvert) => {
-    // Le fond ne doit pas défiler derrière le panneau.
-    document.body.style.overflow = estOuvert ? 'hidden' : ''
+    rendreLaPageInerte(estOuvert)
 
     if (estOuvert) {
         origineDuFocus = document.activeElement as HTMLElement | null
         await nextTick()
-        boutonFermer.value?.focus()
+        focaliserQuandVisible(boutonFermer.value)
     }
     else {
-        // Sans ça, le focus repartirait en haut de page après la fermeture.
+        // La page redevient active au prochain rendu seulement.
+        await nextTick()
         origineDuFocus?.focus()
         origineDuFocus = null
     }
 })
-
-// Filet de sécurité : si le composant disparaît alors que le panneau est
-// ouvert, le défilement de la page doit être rendu.
-onBeforeUnmount(() => {
-    document.body.style.overflow = ''
-})
 </script>
 
 <template>
-    <Teleport to="body">
-        <Transition name="menu">
-            <div v-if="ouvert" class="menu-mobile">
-                <!-- Voile cliquable : fermer en touchant à côté est le geste attendu. -->
-                <div class="menu-mobile__voile" @click="fermer" />
-
+    <!-- Rien à rendre côté serveur : le menu, fermé au chargement, ne sert
+         qu'avec JavaScript. -->
+    <ClientOnly>
+        <Teleport to="body">
+            <div class="menu-mobile drawer drawer-end">
                 <!--
-                    L'id est porté ici et non passé en attribut depuis l'en-tête :
-                    la racine du composant est un <Teleport>, qui n'est pas un
-                    élément du DOM, donc un attribut de repli n'atterrirait nulle
-                    part et l'aria-controls du bouton pointerait dans le vide.
+                    Case à cocher qui pilote le drawer de daisyUI, hors du
+                    parcours au clavier : le bouton burger en tient lieu.
                 -->
-                <div
-                    id="menu-mobile"
-                    ref="panneau"
-                    class="menu-mobile__panneau"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Menu de navigation"
+                <input
+                    id="bascule-menu-mobile"
+                    v-model="ouvert"
+                    type="checkbox"
+                    class="drawer-toggle"
+                    tabindex="-1"
+                    aria-hidden="true"
                 >
-                    <button
-                        ref="boutonFermer"
-                        type="button"
-                        class="menu-mobile__fermer"
-                        aria-label="Fermer le menu"
-                        @click="fermer"
-                    >
-                        &times;
-                    </button>
 
-                    <nav class="menu-mobile__nav" aria-label="Navigation principale">
-                        <NuxtLink
-                            v-for="lien in liens"
-                            :key="lien.chemin"
-                            :to="lien.chemin"
-                            class="menu-mobile__lien"
-                            :class="{ 'menu-mobile__lien--actif': estActif(lien.chemin) }"
-                            :aria-current="estActif(lien.chemin) ? 'page' : undefined"
+                <div class="drawer-side z-50">
+                    <!-- Voile cliquable : fermer en touchant à côté est le geste attendu. -->
+                    <label
+                        for="bascule-menu-mobile"
+                        class="menu-mobile__voile drawer-overlay"
+                        aria-hidden="true"
+                        @click.prevent="fermer"
+                    />
+
+                    <div
+                        id="menu-mobile"
+                        ref="panneau"
+                        class="menu-mobile__panneau flex min-h-full w-72 max-w-[85vw] flex-col items-end gap-6 bg-base-200 p-6"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Menu de navigation"
+                    >
+                        <button
+                            ref="boutonFermer"
+                            type="button"
+                            class="menu-mobile__fermer btn btn-square btn-ghost"
+                            aria-label="Fermer le menu"
                             @click="fermer"
                         >
-                            {{ lien.libelle }}
-                        </NuxtLink>
-                    </nav>
+                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+                            </svg>
+                        </button>
 
-                    <NuxtLink to="/admin" class="menu-mobile__admin" @click="fermer">
-                        Admin
-                    </NuxtLink>
+                        <nav class="w-full" aria-label="Navigation principale">
+                            <ul class="menu menu-lg w-full gap-1 p-0">
+                                <li v-for="lien in liens" :key="lien.chemin">
+                                    <NuxtLink
+                                        :to="lien.chemin"
+                                        class="menu-mobile__lien font-display text-3xl"
+                                        :class="{ 'menu-active': estActif(lien.chemin) }"
+                                        :aria-current="estActif(lien.chemin) ? 'page' : undefined"
+                                        @click="fermer"
+                                    >
+                                        {{ lien.libelle }}
+                                    </NuxtLink>
+                                </li>
+                            </ul>
+                        </nav>
+
+                        <NuxtLink
+                            to="/admin"
+                            class="menu-mobile__admin btn btn-primary btn-block mt-auto font-mono uppercase tracking-wider"
+                            @click="fermer"
+                        >
+                            Admin
+                        </NuxtLink>
+                    </div>
                 </div>
             </div>
-        </Transition>
-    </Teleport>
+        </Teleport>
+    </ClientOnly>
 </template>
-
-<style scoped>
-.menu-mobile {
-    position: fixed;
-    z-index: 50;
-    inset: 0;
-}
-
-.menu-mobile__voile {
-    position: absolute;
-    inset: 0;
-    background-color: var(--scrim);
-}
-
-.menu-mobile__panneau {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    width: var(--largeur-panneau-mobile);
-    max-width: 85vw;
-    flex-direction: column;
-    align-items: flex-end;
-    padding: 26px 24px;
-    border-left: 1px solid var(--bordure-default);
-    background-color: var(--fond-surface-teintee);
-}
-
-.menu-mobile__fermer {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--texte-principal);
-    cursor: pointer;
-    font-family: var(--police-texte);
-    font-size: 26px;
-    line-height: 1;
-}
-
-.menu-mobile__nav {
-    display: flex;
-    width: 100%;
-    flex-direction: column;
-    gap: 4px;
-    padding-top: 20px;
-}
-
-.menu-mobile__lien {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--bordure-tenue);
-    color: var(--texte-principal);
-    font-family: var(--police-titre);
-    font-size: 34px;
-    font-weight: 500;
-    line-height: 1;
-}
-
-.menu-mobile__lien--actif {
-    color: var(--or-texte);
-}
-
-.menu-mobile__admin {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    /* Pousse le bouton en bas du panneau, comme sur la maquette. */
-    margin-top: auto;
-    padding: 14px;
-    background-color: var(--or-remplissage);
-    color: var(--texte-sur-or);
-    font-family: var(--police-ui);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.menu-enter-active .menu-mobile__panneau,
-.menu-leave-active .menu-mobile__panneau {
-    transition: transform var(--transition-panneau);
-}
-
-.menu-enter-active .menu-mobile__voile,
-.menu-leave-active .menu-mobile__voile {
-    transition: opacity var(--transition-panneau);
-}
-
-.menu-enter-from .menu-mobile__panneau,
-.menu-leave-to .menu-mobile__panneau {
-    transform: translateX(100%);
-}
-
-.menu-enter-from .menu-mobile__voile,
-.menu-leave-to .menu-mobile__voile {
-    opacity: 0;
-}
-</style>

@@ -5,45 +5,13 @@
 </script>
 
 <template>
-    <section class="appel">
-        <p class="appel__phrase">Créons quelque chose d'inoubliable.</p>
+    <section class="appel hero border-t border-base-300 bg-base-200 px-5.5 py-12 bureau:px-10 bureau:py-24">
+        <div class="hero-content w-full flex-col gap-6 p-0 text-center">
+            <p class="font-display text-[clamp(40px,5.5vw,80px)] font-medium italic leading-none tracking-[-1px]">
+                Créons quelque chose d'inoubliable.
+            </p>
 
-        <NuxtLink to="/contact" class="bouton bouton--or">Prendre contact</NuxtLink>
+            <NuxtLink to="/contact" class="btn btn-primary w-full tablette:w-auto">Prendre contact</NuxtLink>
+        </div>
     </section>
 </template>
-
-<style scoped>
-.appel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 22px;
-    padding: 50px var(--gouttiere);
-    border-top: 1px solid var(--bordure-default);
-    background-color: var(--fond-surface-teintee);
-    text-align: center;
-}
-
-@media (min-width: 900px) {
-    .appel {
-        gap: 26px;
-        padding: 90px var(--gouttiere);
-    }
-}
-
-.appel__phrase {
-    font-family: var(--police-titre);
-    font-size: clamp(40px, 5.5vw, 80px);
-    font-style: italic;
-    font-weight: 500;
-    letter-spacing: -1px;
-    line-height: 1;
-}
-
-@media (max-width: 599px) {
-    .appel :deep(.bouton) {
-        width: 100%;
-        justify-content: center;
-    }
-}
-</style>

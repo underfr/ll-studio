@@ -55,22 +55,22 @@ async function quitter(chemin: string): Promise<void> {
 
 <template>
     <NuxtLayout>
-        <section class="erreur">
-            <p class="section__kicker">Erreur {{ error.statusCode }}</p>
+        <section class="erreur mx-auto max-w-360 px-5.5 py-24 bureau:px-10">
+            <p class="section__kicker surtitre">Erreur {{ error.statusCode }}</p>
 
-            <h1 class="erreur__titre">{{ titre }}</h1>
+            <h1 class="erreur__titre mt-4 max-w-[16ch] font-display text-[clamp(40px,7vw,76px)] tracking-[-1px]">{{ titre }}</h1>
 
-            <p class="erreur__message">{{ message }}</p>
+            <p class="erreur__message mt-6 max-w-[48ch] text-base-content/70">{{ message }}</p>
 
-            <div class="erreur__actions">
-                <a href="/" class="bouton bouton--or" @click.prevent="quitter('/')">
+            <div class="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
+                <a href="/" class="bouton btn btn-primary" @click.prevent="quitter('/')">
                     Retour à l'accueil
                 </a>
 
                 <a
                     v-if="estIntrouvable"
                     href="/galerie"
-                    class="section__report"
+                    class="section__report link link-hover link-secondary font-mono text-xs uppercase tracking-wider"
                     @click.prevent="quitter('/galerie')"
                 >
                     Voir la galerie
@@ -79,33 +79,3 @@ async function quitter(chemin: string): Promise<void> {
         </section>
     </NuxtLayout>
 </template>
-
-<style scoped>
-.erreur {
-    max-width: var(--largeur-max);
-    margin-inline: auto;
-    padding: 96px var(--gouttiere);
-}
-
-.erreur__titre {
-    max-width: 16ch;
-    margin-top: 16px;
-    font-size: clamp(40px, 7vw, 76px);
-    letter-spacing: -1px;
-}
-
-.erreur__message {
-    max-width: 48ch;
-    margin-top: 24px;
-    color: var(--texte-secondaire);
-    font-size: 16px;
-}
-
-.erreur__actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px 28px;
-    margin-top: 40px;
-}
-</style>

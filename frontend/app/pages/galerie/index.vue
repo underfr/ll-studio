@@ -43,11 +43,11 @@ const photoOuverte = ref<number | null>(null)
 </script>
 
 <template>
-    <div class="galerie">
-        <div class="galerie__tete">
+    <div class="galerie px-5.5 pt-10 pb-20 bureau:px-10 bureau:pt-13 bureau:pb-25">
+        <div class="mb-6.5 flex flex-wrap items-end justify-between gap-5">
             <div>
-                <p class="section__kicker">Archive complète</p>
-                <h1 class="galerie__titre">Galerie</h1>
+                <p class="surtitre">Archive complète</p>
+                <h1 class="font-display text-[clamp(56px,6.5vw,90px)] tracking-[-1.5px]">Galerie</h1>
             </div>
 
             <GalerieBascule :actif="modeActif" />
@@ -55,11 +55,20 @@ const photoOuverte = ref<number | null>(null)
 
         <AppFiltresCategories :categories="universDisponibles" :actif="categorieActive" base="/galerie" />
 
-        <p class="galerie__compte" aria-live="polite">
+        <p class="galerie__compte mt-5.5 mb-4 font-mono text-[10px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
             {{ total }} {{ total > 1 ? 'photographies' : 'photographie' }}
         </p>
 
-        <div :class="modeActif === 'grille' ? 'grille' : 'mosaique'">
+        <!--
+            Mosaïque en colonnes CSS : les tuiles gardent leurs proportions
+            d'origine et se rangent d'elles-mêmes, sans mesure JavaScript ni
+            saut de mise en page au chargement des images.
+        -->
+        <div
+            :class="modeActif === 'grille'
+                ? 'grid grid-cols-2 gap-2 tablette:grid-cols-3 bureau:grid-cols-5'
+                : 'columns-1 gap-4 *:mb-4 *:break-inside-avoid tablette:columns-2 bureau:columns-3'"
+        >
             <AppCartePhoto
                 v-for="(photo, rang) in liste"
                 :key="photo['@id']"
@@ -72,96 +81,10 @@ const photoOuverte = ref<number | null>(null)
 
         <AppVisionneuse v-model:index="photoOuverte" :photos="liste" />
 
-        <div v-if="resteAcharger" class="galerie__suite">
-            <button type="button" class="bouton bouton--or" @click="nombreDemande += TRANCHE">
+        <div v-if="resteAcharger" class="mt-10 flex justify-center">
+            <button type="button" class="btn btn-primary" @click="nombreDemande += TRANCHE">
                 Charger plus
             </button>
         </div>
     </div>
 </template>
-
-<style scoped>
-.galerie {
-    padding: 40px var(--gouttiere) 80px;
-}
-
-@media (min-width: 900px) {
-    .galerie {
-        padding: 52px var(--gouttiere) 100px;
-    }
-}
-
-.galerie__tete {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 26px;
-}
-
-.galerie__titre {
-    font-size: clamp(56px, 6.5vw, 90px);
-    letter-spacing: -1.5px;
-}
-
-.galerie__compte {
-    margin: 22px 0 16px;
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-/*
- * Mosaïque en colonnes CSS : les tuiles gardent leurs proportions d'origine
- * et se rangent d'elles-mêmes, sans mesure JavaScript ni saut de mise en page
- * au chargement des images.
- */
-.mosaique {
-    column-gap: 16px;
-    columns: 1;
-}
-
-.mosaique > * {
-    margin-bottom: 16px;
-    break-inside: avoid;
-}
-
-@media (min-width: 600px) {
-    .mosaique {
-        columns: 2;
-    }
-}
-
-@media (min-width: 900px) {
-    .mosaique {
-        columns: 3;
-    }
-}
-
-.grille {
-    display: grid;
-    gap: 2px;
-    grid-template-columns: repeat(2, 1fr);
-}
-
-@media (min-width: 600px) {
-    .grille {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (min-width: 900px) {
-    .grille {
-        grid-template-columns: repeat(5, 1fr);
-    }
-}
-
-.galerie__suite {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-}
-</style>

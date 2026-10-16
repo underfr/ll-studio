@@ -2,7 +2,8 @@
 import type { Categorie } from '~/types/api'
 
 /**
- * Chips de filtrage par catégorie, partagées par la galerie et les albums.
+ * Filtres par catégorie, partagés par la galerie et les albums : des boutons
+ * daisyUI, pleins pour la catégorie active.
  *
  * Ce sont des liens et non des boutons : le filtre vit dans l'URL, donc
  * chaque état de la page est partageable, indexable et navigable avec les
@@ -34,10 +35,10 @@ function versCategorie(slug: string) {
 </script>
 
 <template>
-    <nav class="filtres" aria-label="Filtrer par catégorie">
+    <nav class="filtres flex flex-wrap gap-2.5" aria-label="Filtrer par catégorie">
         <NuxtLink
-            class="chip"
-            :class="{ 'chip--actif': actif === '' }"
+            class="btn btn-sm font-mono uppercase tracking-wider"
+            :class="actif === '' ? 'btn-primary' : 'btn-outline'"
             :to="versCategorie('')"
             :aria-current="actif === '' ? 'true' : undefined"
         >
@@ -47,8 +48,8 @@ function versCategorie(slug: string) {
         <NuxtLink
             v-for="categorie in categories"
             :key="categorie['@id']"
-            class="chip"
-            :class="{ 'chip--actif': actif === categorie.slug }"
+            class="btn btn-sm font-mono uppercase tracking-wider"
+            :class="actif === categorie.slug ? 'btn-primary' : 'btn-outline'"
             :to="versCategorie(categorie.slug)"
             :aria-current="actif === categorie.slug ? 'true' : undefined"
         >
@@ -56,36 +57,3 @@ function versCategorie(slug: string) {
         </NuxtLink>
     </nav>
 </template>
-
-<style scoped>
-.filtres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.chip {
-    padding: 8px 16px;
-    border: 1px solid var(--bordure-chip);
-    border-radius: 99px;
-    color: var(--texte-secondaire);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    transition: border-color var(--transition-courte), color var(--transition-courte),
-        background-color var(--transition-courte);
-}
-
-.chip:hover {
-    border-color: var(--texte-principal);
-    color: var(--texte-principal);
-}
-
-.chip--actif,
-.chip--actif:hover {
-    border-color: var(--or-remplissage);
-    background-color: var(--or-remplissage);
-    color: var(--texte-sur-or);
-}
-</style>

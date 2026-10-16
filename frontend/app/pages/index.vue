@@ -23,17 +23,24 @@ const univers = computed(() => categories.value?.member ?? [])
 
     <AccueilBandeau v-if="univers.length" :categories="univers" />
 
-    <section v-if="series.length" class="section">
-        <div class="section__tete">
+    <section v-if="series.length" class="px-5.5 py-14 bureau:px-10 bureau:py-20">
+        <div class="mb-8 flex flex-wrap items-end justify-between gap-4 bureau:mb-10">
             <div>
-                <p class="section__kicker">Travail sélectionné</p>
-                <h2 class="section__titre">Albums en vedette</h2>
+                <p class="surtitre mb-1.5">Travail sélectionné</p>
+                <h2 class="font-display text-[clamp(40px,4.5vw,64px)] tracking-[-1px]">Albums en vedette</h2>
             </div>
 
-            <NuxtLink to="/albums" class="section__report">Tout voir →</NuxtLink>
+            <NuxtLink to="/albums" class="link link-hover link-secondary font-mono text-xs uppercase tracking-wider">
+                Tout voir →
+            </NuxtLink>
         </div>
 
-        <div class="grille">
+        <!--
+            auto-fill et non auto-fit : les pistes vides sont conservées, donc
+            deux séries seules gardent la taille de carte prévue au lieu de
+            s'étirer sur la moitié de l'écran chacune.
+        -->
+        <div class="grid gap-3.5 bureau:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] bureau:gap-5">
             <AppCarteAlbum
                 v-for="(album, rang) in series"
                 :key="album['@id']"
@@ -47,23 +54,3 @@ const univers = computed(() => categories.value?.member ?? [])
 
     <AccueilAppel />
 </template>
-
-<style scoped>
-.grille {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: 1fr;
-}
-
-@media (min-width: 900px) {
-    .grille {
-        gap: 20px;
-        /*
-         * auto-fill et non auto-fit : les pistes vides sont conservées, donc
-         * deux séries seules gardent la taille de carte prévue au lieu de
-         * s'étirer sur la moitié de l'écran chacune.
-         */
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    }
-}
-</style>
