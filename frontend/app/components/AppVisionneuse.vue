@@ -111,27 +111,39 @@ onMounted(() => document.addEventListener('keydown', surTouche))
 
 onBeforeUnmount(() => document.removeEventListener('keydown', surTouche))
 
-watch(ouverte, async (estOuverte) => {
-    if (estOuverte) {
+/*
+ * Le focus d'origine est noté dès que la visionneuse s'ouvre, avant le rendu
+ * du dialogue : c'est l'élément qui l'a déclenchée, une tuile le plus souvent.
+ * immediate couvre une visionneuse montée déjà ouverte (issue #71).
+ */
+watch(ouverte, (estOuverte) => {
+    if (estOuverte && import.meta.client) {
         origineDuFocus = document.activeElement as HTMLElement | null
-        await nextTick()
+    }
+}, { immediate: true })
+
+/*
+ * Le dialogue est ouvert en modal dès qu'il apparaît dans le document, que
+ * ce soit au montage ou plus tard : un <dialog> rendu sans showModal()
+ * resterait invisible (issue #71). Une fois retiré du document, il n'est plus
+ * modal et la page retrouve son interactivité : le focus peut alors revenir
+ * à son point de départ.
+ */
+watch(dialogue, (element) => {
+    if (element) {
         // showModal n'existe pas dans tous les environnements de test.
-        if (typeof dialogue.value?.showModal === 'function' && !dialogue.value.open) {
-            dialogue.value.showModal()
+        if (typeof element.showModal === 'function' && !element.open) {
+            element.showModal()
         }
         boutonFermer.value?.focus()
         prechargerVoisines()
+
+        return
     }
-    else {
-        // Tant que le dialogue modal est ouvert, le reste de la page est
-        // inerte et ne peut pas recevoir le focus : on le ferme d'abord.
-        if (dialogue.value?.open) {
-            dialogue.value.close()
-        }
-        origineDuFocus?.focus()
-        origineDuFocus = null
-    }
-})
+
+    origineDuFocus?.focus()
+    origineDuFocus = null
+}, { flush: 'post' })
 
 watch(index, () => {
     if (ouverte.value) {
