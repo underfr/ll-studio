@@ -36,12 +36,17 @@ export default defineConfig({
              * D2 du plan) : cela efface la base de développement, qui ne doit
              * donc contenir que les fixtures. Les parcours ne modifient
              * aucune donnée, un seul rechargement suffit.
+             *
+             * Les compteurs du limiteur de connexion sont aussi remis à zéro
+             * (RG-AUTH-06) : plusieurs campagnes à la suite dépasseraient
+             * sinon le seuil de tentatives par adresse, et les parcours qui
+             * se connectent échoueraient en 429 selon ce qui a tourné avant.
              */
             on('before:run', () => {
-                execSync(
-                    'docker compose -f ../docker/docker-compose.yml exec -T php php bin/console doctrine:fixtures:load --no-interaction',
-                    { stdio: 'inherit' },
-                )
+                const console = 'docker compose -f ../docker/docker-compose.yml exec -T php php bin/console'
+
+                execSync(`${console} doctrine:fixtures:load --no-interaction`, { stdio: 'inherit' })
+                execSync(`${console} cache:pool:clear cache.rate_limiter`, { stdio: 'inherit' })
             })
         },
     },

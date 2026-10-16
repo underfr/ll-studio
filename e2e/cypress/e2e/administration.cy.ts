@@ -1,6 +1,6 @@
 /**
- * Back-office : accès, session et déconnexion, règles RG-ADM, RG-AUTH-11,
- * RG-AUTH-12 et RG-IDX-03.
+ * Back-office : accès, session, déconnexion et panneau mobile, règles
+ * RG-ADM, RG-AUTH-11, RG-AUTH-12 et RG-IDX-03.
  */
 
 /** Remplit et envoie le formulaire de connexion avec le compte de démonstration. */
@@ -60,6 +60,34 @@ describe('Back-office', () => {
         // Un rechargement ne rouvre rien : le jeton a été révoqué par l'API.
         cy.visiter('/admin')
         cy.location('pathname').should('eq', '/admin/connexion')
+    })
+
+    it('CT-E2E-19 · sur mobile, le panneau de navigation se pilote au clavier et se ferme en naviguant', () => {
+        cy.viewport(375, 812)
+        cy.visiter('/admin/connexion')
+        seConnecter()
+        cy.location('pathname').should('eq', '/admin')
+
+        // Fermé, le panneau n'offre aucun lien atteignable.
+        cy.get('.drawer-side').should('not.be.visible')
+
+        cy.findByRole('button', { name: 'Ouvrir le menu' }).should('have.attr', 'aria-expanded', 'false').focus()
+        cy.realPress('Enter')
+        cy.focused().should('have.attr', 'aria-label', 'Fermer le menu')
+        cy.findByRole('button', { name: 'Ouvrir le menu' }).should('have.attr', 'aria-expanded', 'true')
+        cy.get('.drawer-content').should('have.attr', 'inert')
+
+        cy.realPress('Escape')
+        cy.focused().should('have.attr', 'aria-label', 'Ouvrir le menu')
+        cy.get('.drawer-content').should('not.have.attr', 'inert')
+
+        cy.realPress('Enter')
+        cy.findByRole('navigation', { name: 'Navigation de l\'administration' }).within(() => {
+            cy.findByRole('link', { name: 'Messages' }).click()
+        })
+        cy.location('pathname').should('eq', '/admin/messages')
+        cy.findByRole('button', { name: 'Ouvrir le menu' }).should('have.attr', 'aria-expanded', 'false')
+        cy.get('.drawer-side').should('not.be.visible')
     })
 
     it('CT-E2E-18 · les pages du back-office ne sont pas indexables', () => {
