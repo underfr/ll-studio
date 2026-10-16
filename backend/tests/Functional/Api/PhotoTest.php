@@ -261,7 +261,13 @@ final class PhotoTest extends FunctionalTestCase
             'category' => $this->categorie,
             'createdAt' => new \DateTimeImmutable('2025-02-01'),
         ]);
-        $masquee = PhotoFactory::new()->hidden()->create(['category' => $this->categorie, 'createdAt' => new \DateTimeImmutable('2023-01-01')]);
+        // Titre fixé : un titre tiré par Faker pouvait se classer avant
+        // « Aurore boréale » et faire échouer le tri par titre au hasard.
+        $masquee = PhotoFactory::new()->hidden()->create([
+            'title' => 'Zénith masqué',
+            'category' => $this->categorie,
+            'createdAt' => new \DateTimeImmutable('2023-01-01'),
+        ]);
         AlbumFactory::createOne(['slug' => 'nogaro-2024', 'photos' => [$nogaro]]);
 
         $ids = fn (string $requete): array => array_column(
@@ -278,7 +284,7 @@ final class PhotoTest extends FunctionalTestCase
         self::assertSame([$masquee->getId()], $ids('?visible=false'));
         self::assertSame([$aurore->getId(), $nogaro->getId(), $masquee->getId()], $ids(''));
         self::assertSame([$masquee->getId(), $nogaro->getId(), $aurore->getId()], $ids('?order[createdAt]=asc'));
-        self::assertSame($aurore->getId(), $ids('?order[title]=asc')[0]);
+        self::assertSame([$aurore->getId(), $nogaro->getId(), $masquee->getId()], $ids('?order[title]=asc'));
     }
 
     #[TestDox('CT-FB-43 · date de modification, auteur et séries n\'apparaissent qu\'au détail')]
