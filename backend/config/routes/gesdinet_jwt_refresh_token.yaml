@@ -1,3 +1,11 @@
 gesdinet_jwt_refresh_token:
     path: /api/token/refresh
     methods: ['POST']
+
+# Point d'entrée de la déconnexion (issue #62). Comme /api/login, la route
+# n'existe que pour que Symfony y achemine la requête : c'est l'écouteur de
+# déconnexion du pare-feu qui répond. Réservée à POST pour qu'un simple lien
+# ne puisse pas fermer la session.
+api_token_invalidate:
+    path: /api/token/invalidate
+    methods: ['POST']

@@ -21,7 +21,34 @@ gesdinet_jwt_refresh_token:
     # Une session par appareil, cinq appareils au maximum.
     max_tokens_per_user: 5
 
+    # Le jeton de rafraîchissement voyage dans un cookie et non dans le corps
+    # des réponses (issue #62). HttpOnly : aucun script de la page ne peut le
+    # lire, donc une faille XSS ne permet pas de l'emporter. SameSite=Strict :
+    # le navigateur ne l'envoie jamais depuis un autre site. Le chemin le
+    # limite à /api/token/refresh et /api/token/invalidate, les seules routes
+    # qui en ont l'usage : il ne part avec aucune autre requête.
+    cookie:
+        enabled: true
+        same_site: strict
+        path: /api/token
+        http_only: true
+        secure: true
+        remove_token_from_body: true
+
     # Ajoute POST /api/token/refresh à la spécification OpenAPI générée par
     # API Platform, aux côtés de /api/login documenté par Lexik.
     api_platform:
         enabled: true
+
+# Le développement et les tests tournent en HTTP. Un cookie Secure n'y serait
+# pas renvoyé par tous les navigateurs, ni par le client HTTP des tests
+# fonctionnels. La production garde Secure.
+when@dev:
+    gesdinet_jwt_refresh_token:
+        cookie:
+            secure: false
+
+when@test:
+    gesdinet_jwt_refresh_token:
+        cookie:
+            secure: false

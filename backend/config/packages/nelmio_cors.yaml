@@ -2,6 +2,12 @@ nelmio_cors:
     defaults:
         origin_regex: true
         allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
+        # Le front et l'API n'ont pas la même origine : sans cette option, le
+        # navigateur ignorerait le cookie du jeton de rafraîchissement posé
+        # par /api/login et ne l'enverrait pas à /api/token/refresh. Elle
+        # n'ouvre rien de plus : l'origine reste filtrée par CORS_ALLOW_ORIGIN,
+        # que Nelmio renvoie telle quelle et jamais sous la forme « * ».
+        allow_credentials: true
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
         allow_headers: ['Content-Type', 'Authorization']
         expose_headers: ['Link']
