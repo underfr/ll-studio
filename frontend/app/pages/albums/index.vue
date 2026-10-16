@@ -34,7 +34,7 @@ const universDisponibles = computed(() => categories.value?.member ?? [])
             base="/albums"
         />
 
-        <p class="albums__compte mt-5.5 mb-4 font-mono text-[10px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
+        <p class="albums__compte mt-5.5 mb-4 font-mono text-[11px] uppercase tracking-[2px] text-base-content/60" aria-live="polite">
             {{ total }} {{ total > 1 ? 'séries' : 'série' }}
         </p>
 
