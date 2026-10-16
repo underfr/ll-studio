@@ -209,7 +209,7 @@ watch(index, () => {
                 >
 
                 <figcaption class="visionneuse__legende flex max-w-[720px] flex-col gap-1.5 text-center">
-                    <p v-if="photo.category" class="visionneuse__categorie font-mono text-[10px] uppercase tracking-[3px] text-primary">
+                    <p v-if="photo.category" class="visionneuse__categorie font-mono text-[11px] uppercase tracking-[3px] text-accent">
                         {{ photo.category.name }}
                     </p>
                     <p class="font-display text-[clamp(24px,3vw,34px)] font-medium leading-tight text-neutral-content">

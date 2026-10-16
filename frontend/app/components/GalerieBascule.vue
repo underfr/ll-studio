@@ -28,7 +28,7 @@ function versMode(mode: ModeAffichage) {
 
 <template>
     <div class="bascule flex items-center gap-2.5">
-        <span id="intitule-affichage" class="font-mono text-[10px] uppercase tracking-[2px] text-base-content/60">Affichage</span>
+        <span id="intitule-affichage" class="font-mono text-[11px] uppercase tracking-[2px] text-base-content/60">Affichage</span>
 
         <div class="join" role="group" aria-labelledby="intitule-affichage">
             <NuxtLink
