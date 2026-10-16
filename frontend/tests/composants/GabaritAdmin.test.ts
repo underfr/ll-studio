@@ -5,7 +5,7 @@ import { h } from 'vue'
 import GabaritAdmin from '~/layouts/admin.vue'
 
 /**
- * Gabarit du back-office, règles RG-ADM-09 et RG-ADM-10.
+ * Gabarit du back-office, règles RG-ADM-09, RG-ADM-10 et RG-ADM-12.
  */
 const { session, navigation } = vi.hoisted(() => ({
     session: {
@@ -37,6 +37,8 @@ async function gabarit(route = '/admin/photos/12') {
     const enveloppe = await mountSuspended(GabaritAdmin, {
         route,
         slots: { default: () => h('p', { class: 'contenu-de-page' }, 'Contenu') },
+        // Rattaché au document pour que le focus puisse y être observé.
+        attachTo: document.body,
     })
     montes.push(enveloppe)
 
@@ -65,5 +67,44 @@ describe('Gabarit du back-office', () => {
 
         expect(session.deconnecter).toHaveBeenCalledOnce()
         expect(navigation).toHaveBeenCalledWith('/admin/connexion')
+    })
+
+    it('CT-CF-56 · le panneau mobile s\'ouvre par un bouton, prend le focus et rend le reste inerte', async () => {
+        const enveloppe = await gabarit()
+        const bouton = enveloppe.get('button[aria-controls="panneau-admin"]')
+
+        expect(bouton.attributes('aria-expanded')).toBe('false')
+
+        await bouton.trigger('click')
+        await flushPromises()
+
+        expect(bouton.attributes('aria-expanded')).toBe('true')
+        expect((enveloppe.get('.drawer-toggle').element as HTMLInputElement).checked).toBe(true)
+        expect((enveloppe.get('.drawer-content').element as HTMLElement).inert).toBe(true)
+        expect(document.activeElement?.getAttribute('aria-label')).toBe('Fermer le menu')
+    })
+
+    it('CT-CF-56 · Échap ferme le panneau et rend le focus au bouton', async () => {
+        const enveloppe = await gabarit()
+        await enveloppe.get('button[aria-controls="panneau-admin"]').trigger('click')
+        await flushPromises()
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+        await flushPromises()
+
+        expect((enveloppe.get('.drawer-toggle').element as HTMLInputElement).checked).toBe(false)
+        expect((enveloppe.get('.drawer-content').element as HTMLElement).inert).toBe(false)
+        expect(document.activeElement?.getAttribute('aria-label')).toBe('Ouvrir le menu')
+    })
+
+    it('CT-CF-56 · un lien du panneau le ferme, même celui de la rubrique affichée', async () => {
+        const enveloppe = await gabarit('/admin/photos')
+        await enveloppe.get('button[aria-controls="panneau-admin"]').trigger('click')
+        await flushPromises()
+
+        await enveloppe.findAll('.nav__lien').find(lien => lien.text() === 'Photos')!.trigger('click')
+        await flushPromises()
+
+        expect(enveloppe.get('button[aria-controls="panneau-admin"]').attributes('aria-expanded')).toBe('false')
     })
 })

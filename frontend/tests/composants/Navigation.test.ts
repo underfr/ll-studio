@@ -49,8 +49,8 @@ describe('AppMenuMobile', () => {
 
     it.each([
         ['la touche Échap', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))],
-        ['un clic sur le voile', () => document.querySelector<HTMLElement>('.menu__voile')!.click()],
-        ['un clic sur un lien', () => document.querySelector<HTMLElement>('.menu__lien')!.click()],
+        ['un clic sur le voile', () => document.querySelector<HTMLElement>('.menu-mobile__voile')!.click()],
+        ['un clic sur un lien', () => document.querySelector<HTMLElement>('.menu-mobile__lien')!.click()],
     ])('CT-CF-20 · se ferme par %s et rend le focus', async (_geste, fermer) => {
         const { enveloppe, declencheur } = await menu()
 

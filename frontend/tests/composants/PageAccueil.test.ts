@@ -42,7 +42,7 @@ describe('Page d\'accueil', () => {
 
         expect(etat.demandes.photos).toMatchObject({ itemsPerPage: 2 })
         expect(etat.demandes.series).toMatchObject({ itemsPerPage: 4 })
-        expect(page.get('.hero__photo').attributes('src')).toContain('/photo-1.jpg')
+        expect(page.get('.ouverture__photo').attributes('src')).toContain('/photo-1.jpg')
         expect(page.findAll('a.carte')).toHaveLength(4)
         expect(page.get('.apropos__visuel img').attributes('src')).toContain('/photo-2.jpg')
         expect(page.findAll('.apropos__chiffres dd').map(chiffre => chiffre.text())).toContain('3')
@@ -56,8 +56,8 @@ describe('Page d\'accueil', () => {
 
         const page = await mountSuspended(Accueil, { route: '/' })
 
-        expect(page.find('.hero').exists()).toBe(true)
-        expect(page.find('.hero__photo').exists()).toBe(false)
+        expect(page.find('.ouverture').exists()).toBe(true)
+        expect(page.find('.ouverture__photo').exists()).toBe(false)
         expect(page.find('a.carte').exists()).toBe(false)
         expect(page.text()).not.toContain('Albums en vedette')
         expect(page.find('.bandeau').exists()).toBe(false)
