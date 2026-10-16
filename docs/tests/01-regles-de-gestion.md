@@ -1,6 +1,6 @@
 # Règles de gestion de LL Studio
 
-Ce document recense les règles que l'application applique aujourd'hui. Elles ont été établies par lecture du code de la branche `main` au commit `35c0e0f` (8 octobre 2026), puis vérifiées sur l'application en fonctionnement quand c'était possible. Elles ont été complétées le 16 octobre 2026 avec l'itération 7, au commit `c484590` : session du back-office par cookie, compte courant, déconnexion, commande de création de l'administrateur, écran de connexion et gabarit d'administration.
+Ce document recense les règles que l'application applique aujourd'hui. Elles ont été établies par lecture du code de la branche `main` au commit `35c0e0f` (8 octobre 2026), puis vérifiées sur l'application en fonctionnement quand c'était possible. Elles ont été complétées le 16 octobre 2026 avec l'itération 7, au commit `c484590` : session du back-office par cookie, compte courant, déconnexion, commande de création de l'administrateur, écran de connexion et gabarit d'administration. Le passage du back-office à daisyUI (#67) y a ajouté le panneau de navigation mobile.
 
 Il sert de référence aux tests : **un test vérifie une règle**. Si un test échoue, soit le code a un défaut, soit la règle doit être révisée. On ne modifie jamais un test pour qu'il passe sans avoir tranché lequel des deux.
 
@@ -259,8 +259,9 @@ Règles de l'itération 7 : accès, session et gabarit. Les écrans de gestion (
 | RG-ADM-07 | Une requête du back-office refusée en 401 est rejouée une fois après rafraîchissement. Si le rafraîchissement échoue, la session est oubliée et l'on revient à la connexion, qui affiche « Votre session a expiré. Reconnectez-vous pour reprendre où vous en étiez. » et ramènera à la page quittée. | `useSession::requete`, `pages/admin/connexion.vue` |
 | RG-ADM-08 | Plusieurs requêtes simultanées qui ont besoin d'un rafraîchissement n'en déclenchent qu'un, le jeton étant à usage unique. | `useSession::rafraichir` |
 | RG-ADM-09 | La déconnexion révoque la session auprès de l'API (RG-AUTH-12), l'oublie côté navigateur même si l'API ne répond pas, et ramène à la connexion. | `useSession::deconnecter`, `layouts/admin.vue` |
-| RG-ADM-10 | Les pages du back-office ont leur propre gabarit, sans l'en-tête ni le pied de page publics : lien d'évitement, navigation Tableau de bord, Photos, Albums, Catégories, Messages, rubrique active signalée par `aria-current` y compris sur ses sous-pages, nom du compte connecté et bouton de déconnexion. | `layouts/admin.vue`, `useNavigationAdmin` |
+| RG-ADM-10 | Les pages du back-office ont leur propre gabarit, sans l'en-tête ni le pied de page publics : lien d'évitement, navigation Tableau de bord, Photos, Albums, Catégories, Messages, rubrique active signalée par `aria-current` y compris sur ses sous-pages, nom du compte connecté et bouton de déconnexion. À partir de 1024 px, ce panneau de navigation reste ouvert sur le côté. | `layouts/admin.vue`, `useNavigationAdmin` |
 | RG-ADM-11 | Un champ de formulaire a un libellé relié. En erreur, il est marqué `aria-invalid` et relié à son message par `aria-describedby`. | `AppChamp` |
+| RG-ADM-12 | Sous 1024 px, le panneau de navigation est fermé et ses liens sont inatteignables. Il s'ouvre par le bouton « Ouvrir le menu », qui indique son état par `aria-expanded`. Ouvert, il reçoit le focus sur « Fermer le menu » et le reste de la page est inerte. Échap le ferme et rend le focus au bouton ; tout lien du panneau le ferme, celui de la rubrique affichée compris. | `layouts/admin.vue` |
 
 ---
 

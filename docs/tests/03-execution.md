@@ -28,7 +28,7 @@ cd e2e && pnpm install
 | Cypress, sans interface | `cd e2e && pnpm test` | 20 s environ |
 | Cypress, avec interface | `cd e2e && pnpm ouvrir` | |
 
-**Attention : `pnpm test` dans `e2e/` recharge les fixtures, ce qui efface la base de développement** (décision D2 du plan). Le mode avec interface ne les recharge pas.
+**Attention : `pnpm test` dans `e2e/` recharge les fixtures, ce qui efface la base de développement** (décision D2 du plan), et remet à zéro les compteurs du limiteur de connexion. Le mode avec interface ne fait ni l'un ni l'autre.
 
 ## Pièges connus
 
@@ -42,7 +42,26 @@ Chacun de ces points a été rencontré pendant l'écriture des tests.
 | pnpm 11 refuse de lancer Cypress | pnpm bloque les scripts d'installation non approuvés. | L'approbation de Cypress est versionnée dans `e2e/pnpm-workspace.yaml`, rien à faire. |
 | Deux tests PHPUnit marqués « incomplets » | C'est voulu : ils vérifient la partie établie d'une règle et signalent la partie en attente de décision. | Voir RG-Q-01 et RG-Q-05 ci-dessous. |
 | `pnpm test` répond « vitest: not found » dans le conteneur front | `node_modules` est un volume partagé par les branches : quand le conteneur front est recréé pendant que `main` est extraite, son installation retire les dépendances de test. | Sur la branche `tests`, dans le conteneur : `pnpm install --frozen-lockfile --store-dir=/pnpm/store`. |
+| Après la synchronisation du 16 octobre, Vitest échoue sur tous les fichiers dès le deuxième passage (« Failed to resolve import ./diagnostics/core.js ») | Vitest 5.0.5, obtenu en régénérant le verrouillage, met en cache des transformations dont un chemin devient invalide au passage suivant. | Outils de test épinglés en version exacte (Vitest 5.0.3, happy-dom 20.14.5, @nuxt/test-utils 4.3.3, @vue/test-utils 2.5.1), ce qui empêche aussi une régénération de les faire monter en silence. |
+| Vitest échoue de la même façon après une construction de production lancée dans le conteneur | La construction écrit dans des caches que l'environnement de test réutilise. | Dans le conteneur : `rm -rf node_modules/.cache/vite node_modules/.vitest-cache node_modules/.vite-temp`. |
 | Des tentatives de connexion échouées s'accumulent pendant les tests de bout en bout | `/api/login` verrouille un identifiant après 5 échecs en 15 minutes. CT-E2E-16 en provoque un volontairement à chaque passage. | Rien à faire : la connexion réussie qui suit remet le compteur à zéro. |
+
+## Synchronisation du 16 octobre 2026, après #67
+
+Synchronisation avec `main` au commit `951fc79` : socle Tailwind CSS et daisyUI, back-office migré (#67).
+
+- **Verrouillage** : en conflit, comme prévu par le plan. Version de `main` reprise, dépendances de test réinstallées dans le conteneur, puis outils de test épinglés (voir les pièges).
+- **Ce qui a cassé** : 4 tests Vitest sur 110, parce que deux blocs du site public ont été renommés pour ne plus porter un nom de composant daisyUI : `.hero` devient `.ouverture` (CT-CF-34), `.menu__*` devient `.menu-mobile__*` (CT-CF-20). Sélecteurs mis à jour, assertions inchangées. Les tests du gabarit, de la connexion et du champ sont passés sans modification grâce aux classes d'accroche conservées.
+- **Ajouts** : CT-CF-56 et CT-E2E-19 pour le panneau de navigation mobile du back-office (RG-ADM-12), qui remplace la bande défilante.
+- **Mutations** : un focus donné avant que daisyUI ait rendu le panneau visible n'est détecté que par CT-E2E-19, ce qui justifie ce test dans un vrai navigateur ; un contenu jamais rendu inerte est détecté par CT-CF-56.
+- **Limiteur de connexion** : au troisième passage consécutif, les parcours qui se connectent ont échoué en 429. Les campagnes du jour, mutations comprises, avaient dépassé le seuil de tentatives depuis la même adresse : c'est RG-AUTH-06 qui fonctionne. Les tests ne doivent pas dépendre de ce qui a tourné avant eux : la configuration Cypress vide désormais le cache du limiteur avant chaque campagne, comme les tests PHP le font avant chaque test. Depuis, neuf passages consécutifs sont verts. Un échec isolé, survenu juste après ce correctif, n'a pas été diagnostiqué faute d'avoir conservé sa sortie, et ne s'est pas reproduit.
+
+| Niveau | Tests | Résultat |
+|---|---|---|
+| PHP, unitaires et fonctionnels | 246 | verts, dont 2 en attente de décision |
+| Unitaires et composants front | 113 | tous verts |
+| Bout en bout | 19 | tous verts |
+| **Total** | **378** | **les 155 cas du plan sont couverts** |
 
 ## Bilan de la campagne du 16 octobre 2026
 

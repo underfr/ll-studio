@@ -324,6 +324,7 @@ Règles d'écriture propres à Cypress :
 | CT-CF-53 | RG-ADM-02, RG-ADM-03 | Connexion admin depuis `?redirection=/admin/albums`, puis `//site-tiers.example` ; connexion d'un compte simple | `/admin/albums`, puis `/admin` ; session fermée et message de refus, aucune navigation | P0 |
 | CT-CF-54 | RG-ADM-07 | Page de connexion avec `raison=expiree` | message d'expiration en `role="status"`, aucune alerte | P1 |
 | CT-CF-55 | RG-ADM-09, RG-ADM-10 | Gabarit sur `/admin/photos/12` ; clic sur « Se déconnecter » | cinq rubriques, Photos seule en `aria-current`, pas d'en-tête public, lien d'évitement, nom du compte ; déconnexion puis `/admin/connexion` | P1 |
+| CT-CF-56 | RG-ADM-12 | Panneau mobile : ouverture par le bouton ; Échap ; ouverture puis clic sur la rubrique affichée | `aria-expanded`, case cochée, contenu inerte, focus sur « Fermer le menu » ; fermé, focus rendu au bouton ; fermé | P1 |
 
 ### 7.5 Bout en bout (CT-E2E)
 
@@ -349,6 +350,7 @@ Sur le jeu de référence décrit en section 5, après rechargement des fixtures
 | CT-E2E-16 | RG-ADM-01, RG-ADM-04, RG-ADM-06 | `/admin/photos` sans session ; mauvais mot de passe ; bon mot de passe ; rechargement | page de connexion avec retour ; message 401, mot de passe vidé ; arrivée sur `/admin/photos` avec le nom du compte, aucun jeton lisible par la page ; session conservée | P0 |
 | CT-E2E-17 | RG-ADM-09, RG-AUTH-12 | Connexion, « Se déconnecter », puis visite de `/admin` | tableau de bord salué ; page de connexion ; toujours la connexion | P0 |
 | CT-E2E-18 | RG-IDX-03 | Réponse de `/admin/connexion` ; page affichée | en-tête `X-Robots-Tag: noindex, nofollow` ; balise `robots` équivalente | P2 |
+| CT-E2E-19 | RG-ADM-12 | En 375 px : panneau fermé ; Entrée sur « Ouvrir le menu » ; Échap ; Entrée puis lien Messages | panneau invisible ; focus sur « Fermer le menu », contenu inerte ; focus rendu, contenu actif ; arrivée sur `/admin/messages`, panneau fermé | P1 |
 
 ## 8. Critères d'entrée et de sortie
 
@@ -373,7 +375,7 @@ Sur le jeu de référence décrit en section 5, après rechargement des fixtures
 | 3 | Front, fonctions et composants | CT-UF, CT-CF |
 | 4 | Parcours de bout en bout | CT-E2E |
 | 5 | Rapport d'exécution, qui devient le jeu d'essai du dossier (#51) | aucun |
-| 6 | Itération 7 : session par cookie, compte courant, déconnexion, commande d'administration, accès au back-office | CT-UB-15, CT-FB-26 à CT-FB-29, CT-FB-85 à CT-FB-87, CT-FB-92, CT-UF-09 à CT-UF-17, CT-CF-50 à CT-CF-55, CT-E2E-16 à CT-E2E-18 |
+| 6 | Itération 7 : session par cookie, compte courant, déconnexion, commande d'administration, accès au back-office | CT-UB-15, CT-FB-26 à CT-FB-29, CT-FB-85 à CT-FB-87, CT-FB-92, CT-UF-09 à CT-UF-17, CT-CF-50 à CT-CF-56, CT-E2E-16 à CT-E2E-19 |
 
 ## 10. Risques
 
