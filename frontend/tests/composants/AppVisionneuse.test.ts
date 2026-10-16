@@ -8,8 +8,9 @@ import { photo, photos } from '../support/donnees'
 /**
  * Visionneuse plein écran, règles RG-LBX.
  *
- * Le dialogue est téléporté dans <body> : on l'interroge donc sur le document
- * et non sur l'enveloppe du composant.
+ * Depuis #68, c'est un <dialog> natif ouvert par showModal(). Le blocage du
+ * défilement vient de la feuille de daisyUI, que cet environnement n'applique
+ * pas : il est vérifié de bout en bout (CT-E2E-08).
  */
 const montes: Array<{ unmount: () => void }> = []
 const ajouts: HTMLElement[] = []
@@ -33,7 +34,7 @@ async function ouvrir(enveloppe: Awaited<ReturnType<typeof monter>>, index: numb
     await flushPromises()
 }
 
-const dialogue = () => document.body.querySelector<HTMLElement>('[role="dialog"]')
+const dialogue = () => document.body.querySelector<HTMLDialogElement>('dialog.visionneuse')
 const bouton = (intitule: string) => document.body.querySelector<HTMLButtonElement>(`button[aria-label="${intitule}"]`)
 const compteur = () => document.body.querySelector('.visionneuse__compteur')?.textContent?.trim()
 
@@ -46,7 +47,6 @@ function touche(cle: string, avecMaj = false) {
 afterEach(() => {
     montes.splice(0).forEach(enveloppe => enveloppe.unmount())
     ajouts.splice(0).forEach(element => element.remove())
-    document.body.style.overflow = ''
     vi.unstubAllGlobals()
 })
 
@@ -55,6 +55,9 @@ describe('AppVisionneuse', () => {
         await monter(photos(5), 1)
 
         const fenetre = dialogue()!
+        // Rôle « dialog » implicite de l'élément, ouvert en modal.
+        expect(fenetre.tagName).toBe('DIALOG')
+        expect(fenetre.open).toBe(true)
         expect(fenetre.getAttribute('aria-modal')).toBe('true')
         expect(fenetre.getAttribute('aria-label')).toBe('Photographie : Photographie 2')
 
@@ -96,13 +99,20 @@ describe('AppVisionneuse', () => {
     it('CT-CF-04 · Échap et un clic sur le fond ferment, pas un clic sur la photo, la légende ou une flèche', async () => {
         const enveloppe = await monter(photos(3), 0)
 
-        for (const selecteur of ['.visionneuse__photo', '.visionneuse__legende', '.visionneuse__nav--suivant']) {
-            document.body.querySelector<HTMLElement>(selecteur)!.click()
+        const cibles: Array<[string, () => HTMLElement]> = [
+            ['la photo', () => document.body.querySelector<HTMLElement>('.visionneuse__photo')!],
+            ['la légende', () => document.body.querySelector<HTMLElement>('.visionneuse__legende')!],
+            ['une flèche', () => bouton('Photographie suivante')!],
+        ]
+
+        for (const [cible, element] of cibles) {
+            element().click()
             await flushPromises()
-            expect(enveloppe.props('index'), selecteur).not.toBeNull()
+            expect(enveloppe.props('index'), cible).not.toBeNull()
         }
 
-        document.body.querySelector<HTMLElement>('.visionneuse__fond')!.click()
+        // Le fond est le dialogue lui-même, tout autour de la scène.
+        dialogue()!.click()
         await flushPromises()
         expect(enveloppe.props('index')).toBeNull()
 
@@ -124,7 +134,7 @@ describe('AppVisionneuse', () => {
         const fermer = bouton('Fermer la visionneuse')!
         const suivant = bouton('Photographie suivante')!
         expect(document.activeElement).toBe(fermer)
-        expect(document.body.style.overflow).toBe('hidden')
+        expect(dialogue()!.open).toBe(true)
 
         // Tab sur le dernier bouton revient au premier, Maj+Tab sur le premier
         // part sur le dernier.
@@ -137,7 +147,7 @@ describe('AppVisionneuse', () => {
         touche('Escape')
         await flushPromises()
         expect(document.activeElement).toBe(declencheur)
-        expect(document.body.style.overflow).toBe('')
+        expect(dialogue()).toBeNull()
     })
 
     it('CT-CF-06 · précharge les deux voisines de la photo affichée', async () => {

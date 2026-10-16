@@ -14,7 +14,7 @@ const ajouts: HTMLElement[] = []
 afterEach(() => {
     montes.splice(0).forEach(enveloppe => enveloppe.unmount())
     ajouts.splice(0).forEach(element => element.remove())
-    document.body.style.overflow = ''
+    document.getElementById('__nuxt')?.removeAttribute('inert')
 })
 
 async function menu() {
@@ -44,7 +44,10 @@ describe('AppMenuMobile', () => {
 
         expect(document.activeElement?.getAttribute('aria-label')).toBe('Fermer le menu')
         expect(document.getElementById('menu-mobile')?.getAttribute('role')).toBe('dialog')
-        expect(document.body.style.overflow).toBe('hidden')
+        // Le panneau est hors de #__nuxt, qui contient tout le site : la page
+        // entière devient inerte. Le défilement, bloqué par la feuille de
+        // daisyUI, est vérifié de bout en bout (CT-E2E-03).
+        expect(document.getElementById('__nuxt')?.inert).toBe(true)
     })
 
     it.each([
@@ -59,7 +62,7 @@ describe('AppMenuMobile', () => {
 
         expect(enveloppe.props('ouvert')).toBe(false)
         expect(document.activeElement).toBe(declencheur)
-        expect(document.body.style.overflow).toBe('')
+        expect(document.getElementById('__nuxt')?.inert).toBe(false)
     })
 })
 

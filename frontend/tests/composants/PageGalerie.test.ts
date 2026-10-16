@@ -86,6 +86,7 @@ describe('Page galerie', () => {
         await page.get('button.tuile').trigger('click')
         await flushPromises()
 
-        expect(document.body.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Photographie : Photographie 1')
+        // La visionneuse n'est plus téléportée depuis #68 : elle est dans la page.
+        expect(page.get('dialog.visionneuse').attributes('aria-label')).toBe('Photographie : Photographie 1')
     })
 })
