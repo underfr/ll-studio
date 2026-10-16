@@ -9,28 +9,28 @@ defineProps<{ photo?: Photo }>()
 </script>
 
 <template>
-    <section class="hero">
+    <section class="ouverture">
         <img
             v-if="photo"
-            class="hero__photo"
+            class="ouverture__photo"
             :src="urlMedia(photo.contentUrl)"
             :alt="photo.alt"
             fetchpriority="high"
             decoding="async"
         >
-        <div class="hero__voile" />
+        <div class="ouverture__voile" />
 
-        <div class="hero__copy">
-            <p class="hero__kicker">Photographe · Multimédia</p>
+        <div class="ouverture__copy">
+            <p class="ouverture__kicker">Photographe · Multimédia</p>
 
-            <h1 class="hero__titre">La lumière raconte ce que les mots taisent.</h1>
+            <h1 class="ouverture__titre">La lumière raconte ce que les mots taisent.</h1>
 
-            <p class="hero__accroche">
+            <p class="ouverture__accroche">
                 Nature, spectacle, espace, automobile, événements : je capture l'instant
                 où la scène bascule dans le sublime.
             </p>
 
-            <div class="hero__actions">
+            <div class="ouverture__actions">
                 <NuxtLink to="/galerie" class="bouton bouton--or">Voir la galerie</NuxtLink>
                 <NuxtLink to="/contact" class="bouton bouton--contour">Me réserver</NuxtLink>
             </div>
@@ -39,7 +39,7 @@ defineProps<{ photo?: Photo }>()
 </template>
 
 <style scoped>
-.hero {
+.ouverture {
     position: relative;
     display: flex;
     min-height: 660px;
@@ -51,13 +51,13 @@ defineProps<{ photo?: Photo }>()
 }
 
 @media (min-width: 900px) {
-    .hero {
+    .ouverture {
         min-height: 820px;
         padding-bottom: 56px;
     }
 }
 
-.hero__photo {
+.ouverture__photo {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -75,7 +75,7 @@ defineProps<{ photo?: Photo }>()
  * corriger dans l'audit d'accessibilité (issue #33), probablement par un
  * voile local sous le bloc de texte.
  */
-.hero__voile {
+.ouverture__voile {
     position: absolute;
     inset: 0;
     background: linear-gradient(
@@ -87,7 +87,7 @@ defineProps<{ photo?: Photo }>()
 }
 
 @media (min-width: 900px) {
-    .hero__voile {
+    .ouverture__voile {
         background: linear-gradient(
             to bottom,
             rgb(18 16 12 / 55%) 0%,
@@ -97,7 +97,7 @@ defineProps<{ photo?: Photo }>()
     }
 }
 
-.hero__copy {
+.ouverture__copy {
     position: relative;
     display: flex;
     max-width: 1100px;
@@ -105,7 +105,7 @@ defineProps<{ photo?: Photo }>()
     gap: 16px;
 }
 
-.hero__kicker {
+.ouverture__kicker {
     color: var(--or-remplissage);
     font-family: var(--police-ui);
     font-size: clamp(10px, 1vw, 12px);
@@ -113,7 +113,7 @@ defineProps<{ photo?: Photo }>()
     text-transform: uppercase;
 }
 
-.hero__titre {
+.ouverture__titre {
     max-width: 14ch;
     color: var(--texte-sur-sombre);
     font-size: clamp(52px, 8vw, 115px);
@@ -122,14 +122,14 @@ defineProps<{ photo?: Photo }>()
     line-height: 0.93;
 }
 
-.hero__accroche {
+.ouverture__accroche {
     max-width: 520px;
     color: rgb(244 240 232 / 92%);
     font-size: clamp(15px, 1.2vw, 17px);
     line-height: 1.55;
 }
 
-.hero__actions {
+.ouverture__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 14px;
@@ -138,11 +138,11 @@ defineProps<{ photo?: Photo }>()
 
 /* Sur mobile la maquette empile un seul bouton pleine largeur. */
 @media (max-width: 599px) {
-    .hero__actions {
+    .ouverture__actions {
         flex-direction: column;
     }
 
-    .hero__actions :deep(.bouton) {
+    .ouverture__actions :deep(.bouton) {
         justify-content: center;
     }
 }

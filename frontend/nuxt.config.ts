@@ -1,9 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
     compatibilityDate: '2025-07-15',
     devtools: { enabled: true },
 
     css: ['~/assets/css/tokens.css'],
+
+    vite: {
+        // Tailwind CSS 4 et daisyUI (issue #67). Le module @nuxtjs/tailwindcss
+        // vise encore Tailwind 3 : on passe par le plugin Vite officiel.
+        plugins: [tailwindcss()],
+    },
 
     routeRules: {
         /*

@@ -1,42 +1,25 @@
 <script setup lang="ts">
 /**
- * Gabarit du back-office : barre latérale de navigation et zone de contenu.
+ * Gabarit du back-office, construit sur le « drawer » de daisyUI (issue #67).
  *
- * Le Figma ne contient pas d'écran d'administration. Le gabarit reprend donc
- * les jetons du design system, dont la surface teintée que la maquette
- * réserve aux barres latérales et aux panneaux.
+ * À partir de 1024 px, le panneau de navigation reste ouvert sur le côté.
+ * En dessous, il s'ouvre par le bouton de la barre supérieure.
  *
- * Sous 900 px, la barre latérale devient une barre supérieure dont la
- * navigation défile horizontalement : toutes les rubriques restent à un
- * geste, sans panneau à ouvrir ni piège de focus à maintenir.
+ * daisyUI fait le reste en CSS : panneau masqué (et donc hors du parcours
+ * au clavier) tant qu'il est fermé, voile, défilement de la page bloqué
+ * pendant l'ouverture. Ce qu'il ne fait pas est ajouté ici : un vrai bouton
+ * à la place de son <label>, que le clavier n'atteint pas, le focus placé à
+ * l'ouverture, Échap pour fermer et le focus rendu au bouton, le reste de la
+ * page rendu inerte tant que le panneau couvre l'écran.
  */
 const { liens, estActif } = useNavigationAdmin()
 const { compte, deconnecter } = useSession()
-const deconnexionEnCours = ref(false)
-
-async function seDeconnecter(): Promise<void> {
-    deconnexionEnCours.value = true
-    await deconnecter()
-    await navigateTo('/admin/connexion')
-}
-
 const route = useRoute()
-const navigation = ref<HTMLElement | null>(null)
 
-/**
- * Sur mobile, la rubrique active peut se trouver hors de la partie visible
- * de la barre défilante, par exemple « Messages » à l'arrivée sur la page.
- * On la ramène dans le champ. Sur desktop, la liste tient en entier et
- * l'appel ne déplace rien.
- */
-function montrerRubriqueActive(): void {
-    navigation.value
-        ?.querySelector<HTMLElement>('.nav__lien--actif')
-        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-}
-
-onMounted(montrerRubriqueActive)
-watch(() => route.path, () => nextTick(montrerRubriqueActive))
+const menuOuvert = ref(false)
+const deconnexionEnCours = ref(false)
+const boutonMenu = ref<HTMLButtonElement | null>(null)
+const boutonFermer = ref<HTMLButtonElement | null>(null)
 
 useHead({
     titleTemplate: titre => (titre ? `${titre} · Administration LL Studio` : 'Administration LL Studio'),
@@ -45,244 +28,198 @@ useHead({
     // indexée sans cette balise.
     meta: [{ name: 'robots', content: 'noindex, nofollow' }],
 })
+
+async function fermerMenu(rendreLeFocus = true): Promise<void> {
+    if (!menuOuvert.value) {
+        return
+    }
+
+    menuOuvert.value = false
+
+    if (rendreLeFocus) {
+        // Le bouton est dans le contenu, inerte jusqu'au prochain rendu.
+        await nextTick()
+        boutonMenu.value?.focus()
+    }
+}
+
+/**
+ * Place le focus sur un élément dès qu'il devient visible. daisyUI ne rend
+ * le panneau visible qu'après un court délai de transition : un focus donné
+ * plus tôt viserait un élément encore masqué et resterait sans effet.
+ */
+function focaliserQuandVisible(element: HTMLElement | null, essais = 30): void {
+    if (!element || essais === 0) {
+        return
+    }
+
+    // Sans checkVisibility (navigateurs anciens), on tente le focus aussitôt.
+    if (typeof element.checkVisibility !== 'function' || element.checkVisibility({ visibilityProperty: true })) {
+        element.focus()
+
+        return
+    }
+
+    requestAnimationFrame(() => focaliserQuandVisible(element, essais - 1))
+}
+
+watch(menuOuvert, async (ouvert) => {
+    if (ouvert) {
+        await nextTick()
+        focaliserQuandVisible(boutonFermer.value)
+    }
+})
+
+// Naviguer ferme le panneau, y compris par les boutons précédent et suivant
+// du navigateur. Un clic sur la rubrique déjà affichée ne change pas de
+// route : les liens du panneau le ferment donc aussi eux-mêmes.
+watch(() => route.fullPath, () => fermerMenu(false))
+
+function surTouche(evenement: KeyboardEvent): void {
+    if (evenement.key === 'Escape' && menuOuvert.value) {
+        evenement.preventDefault()
+        fermerMenu()
+    }
+}
+
+/*
+ * Si la fenêtre s'élargit panneau ouvert, il passe en colonne fixe : on le
+ * referme, sans quoi le contenu resterait inerte derrière un panneau qui ne
+ * le couvre plus.
+ */
+let largeEcran: MediaQueryList | null = null
+const surChangementDeLargeur = (requete: MediaQueryListEvent) => {
+    if (requete.matches) {
+        fermerMenu(false)
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('keydown', surTouche)
+    largeEcran = window.matchMedia('(min-width: 1024px)')
+    largeEcran.addEventListener('change', surChangementDeLargeur)
+})
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', surTouche)
+    largeEcran?.removeEventListener('change', surChangementDeLargeur)
+})
+
+async function seDeconnecter(): Promise<void> {
+    deconnexionEnCours.value = true
+    await deconnecter()
+    await navigateTo('/admin/connexion')
+}
 </script>
 
 <template>
-    <div class="admin">
-        <a class="lien-evitement" href="#contenu">Aller au contenu</a>
-
+    <div class="admin drawer min-h-screen lg:drawer-open">
         <!--
-            L'ordre du DOM (marque, navigation, pied) est celui du parcours au
-            clavier. Seule la grille déplace le pied, en haut à droite sur
-            mobile et au bas de la barre sur desktop.
+            Case à cocher qui pilote le drawer de daisyUI. Elle est hors du
+            parcours au clavier et des technologies d'assistance : le bouton
+            de la barre supérieure en tient lieu.
         -->
-        <aside class="barre">
-            <div class="barre__marque">
-                <AppLogo cible="/admin" libelle="LL Studio, tableau de bord de l'administration" />
-                <p class="barre__rubrique">Administration</p>
-            </div>
+        <input
+            id="menu-admin"
+            v-model="menuOuvert"
+            type="checkbox"
+            class="drawer-toggle"
+            tabindex="-1"
+            aria-hidden="true"
+        >
 
-            <nav ref="navigation" class="nav" aria-label="Navigation de l'administration">
-                <NuxtLink
-                    v-for="lien in liens"
-                    :key="lien.chemin"
-                    :to="lien.chemin"
-                    class="nav__lien"
-                    :class="{ 'nav__lien--actif': estActif(lien.chemin) }"
-                    :aria-current="estActif(lien.chemin) ? 'page' : undefined"
-                >
-                    {{ lien.libelle }}
-                </NuxtLink>
-            </nav>
+        <div class="drawer-content flex min-w-0 flex-col" :inert="menuOuvert || undefined">
+            <a class="lien-evitement" href="#contenu">Aller au contenu</a>
 
-            <div class="barre__pied">
-                <p v-if="compte" class="barre__compte">
-                    {{ compte.fullName }}
-                </p>
+            <header class="navbar border-b border-base-300 bg-base-200 px-4 lg:hidden">
+                <div class="flex-1">
+                    <AppLogo cible="/admin" taille="mobile" libelle="LL Studio, tableau de bord de l'administration" />
+                </div>
 
                 <button
+                    ref="boutonMenu"
                     type="button"
-                    class="barre__deconnexion"
-                    :disabled="deconnexionEnCours"
-                    @click="seDeconnecter"
+                    class="btn btn-square btn-ghost"
+                    aria-controls="panneau-admin"
+                    :aria-expanded="menuOuvert"
+                    aria-label="Ouvrir le menu"
+                    @click="menuOuvert = true"
                 >
-                    Se déconnecter
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+                    </svg>
                 </button>
+            </header>
 
-                <NuxtLink to="/" class="barre__site">
-                    Voir le site
-                </NuxtLink>
-            </div>
-        </aside>
+            <main id="contenu" class="contenu flex-1 px-4 py-8 focus:outline-none lg:px-10 lg:py-12" tabindex="-1">
+                <slot />
+            </main>
+        </div>
 
-        <main id="contenu" class="contenu" tabindex="-1">
-            <slot />
-        </main>
+        <div class="drawer-side z-40">
+            <label for="menu-admin" class="drawer-overlay" aria-hidden="true" />
+
+            <aside
+                id="panneau-admin"
+                class="barre flex min-h-full w-72 flex-col gap-8 border-r border-base-300 bg-base-200 p-5"
+                aria-label="Menu de l'administration"
+            >
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex flex-col gap-2">
+                        <AppLogo cible="/admin" libelle="LL Studio, tableau de bord de l'administration" @click="fermerMenu(false)" />
+                        <p class="font-mono text-xs uppercase tracking-[0.3em] text-base-content/50">
+                            Administration
+                        </p>
+                    </div>
+
+                    <button
+                        ref="boutonFermer"
+                        type="button"
+                        class="btn btn-square btn-ghost btn-sm lg:hidden"
+                        aria-label="Fermer le menu"
+                        @click="fermerMenu()"
+                    >
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <nav class="nav" aria-label="Navigation de l'administration">
+                    <ul class="menu w-full gap-1 p-0">
+                        <li v-for="lien in liens" :key="lien.chemin">
+                            <NuxtLink
+                                :to="lien.chemin"
+                                class="nav__lien"
+                                :class="{ 'menu-active': estActif(lien.chemin) }"
+                                :aria-current="estActif(lien.chemin) ? 'page' : undefined"
+                                @click="fermerMenu(false)"
+                            >
+                                {{ lien.libelle }}
+                            </NuxtLink>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="barre__pied mt-auto flex flex-col items-start gap-2 border-t border-base-300 pt-5">
+                    <p v-if="compte" class="barre__compte text-sm font-medium">
+                        {{ compte.fullName }}
+                    </p>
+
+                    <button
+                        type="button"
+                        class="barre__deconnexion btn btn-ghost btn-sm -ml-3"
+                        :disabled="deconnexionEnCours"
+                        @click="seDeconnecter"
+                    >
+                        Se déconnecter
+                    </button>
+
+                    <NuxtLink to="/" class="barre__site link link-hover link-secondary text-sm">
+                        Voir le site
+                    </NuxtLink>
+                </div>
+            </aside>
+        </div>
     </div>
 </template>
-
-<style scoped>
-.admin {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-}
-
-/* --- Barre : supérieure sur mobile, latérale à partir de 900 px --- */
-
-.barre {
-    display: grid;
-    grid-template-areas:
-        "marque pied"
-        "nav nav";
-    grid-template-columns: 1fr auto;
-    gap: 12px 16px;
-    padding: 14px 18px 0;
-    border-bottom: 1px solid var(--bordure-default);
-    background-color: var(--fond-surface-teintee);
-}
-
-.barre__marque {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    grid-area: marque;
-}
-
-.barre__rubrique {
-    color: var(--texte-tertiaire);
-    font-family: var(--police-ui);
-    font-size: 9px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
-
-.barre__pied {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    grid-area: pied;
-}
-
-/* Le nom du compte est réservé à la barre latérale : sur mobile, la place
-   manque et le tableau de bord salue déjà la personne connectée. */
-.barre__compte {
-    display: none;
-    color: var(--texte-principal);
-    font-size: 14px;
-}
-
-.barre__deconnexion {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--texte-secondaire);
-    cursor: pointer;
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color var(--transition-courte);
-}
-
-.barre__deconnexion:hover {
-    color: var(--terracotta);
-}
-
-.barre__deconnexion:disabled {
-    cursor: progress;
-}
-
-.barre__site {
-    color: var(--or-texte);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color var(--transition-courte);
-}
-
-.barre__site:hover {
-    color: var(--texte-principal);
-}
-
-/* --- Navigation --- */
-
-.nav {
-    display: flex;
-    gap: 4px;
-    grid-area: nav;
-    /* Sur mobile, les rubriques défilent dans la barre plutôt que de faire
-       déborder la page entière. Les marges négatives laissent le défilement
-       aller jusqu'aux bords de l'écran. */
-    overflow-x: auto;
-    margin-inline: -18px;
-    padding: 0 18px 10px;
-    /* La rubrique ramenée dans le champ garde la même marge que la première. */
-    scroll-padding-inline: 18px;
-    scrollbar-width: none;
-}
-
-.nav__lien {
-    flex-shrink: 0;
-    padding: 10px 12px;
-    color: var(--texte-secondaire);
-    font-family: var(--police-ui);
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    white-space: nowrap;
-    transition: color var(--transition-courte), background-color var(--transition-courte);
-}
-
-.nav__lien:hover {
-    color: var(--texte-principal);
-}
-
-.nav__lien--actif {
-    background-color: var(--voile-leger);
-    color: var(--or-texte);
-}
-
-/* --- Contenu --- */
-
-.contenu {
-    flex: 1;
-    /* Sans ce plancher, un tableau large pousserait la colonne au-delà de
-       l'écran au lieu de défiler dans son propre conteneur. */
-    min-width: 0;
-}
-
-/* Le conteneur reçoit le focus depuis le lien d'évitement, sans anneau. */
-.contenu:focus {
-    outline: none;
-}
-
-@media (min-width: 900px) {
-    .admin {
-        flex-direction: row;
-    }
-
-    .barre {
-        position: sticky;
-        top: 0;
-        width: 248px;
-        height: 100vh;
-        flex-shrink: 0;
-        grid-template-areas:
-            "marque"
-            "nav"
-            "pied";
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
-        gap: 40px;
-        padding: 28px 20px;
-        border-right: 1px solid var(--bordure-default);
-        border-bottom: 0;
-    }
-
-    .barre__pied {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        padding-top: 20px;
-        border-top: 1px solid var(--bordure-tenue);
-    }
-
-    .barre__compte {
-        display: block;
-    }
-
-    .nav {
-        flex-direction: column;
-        align-self: start;
-        overflow-x: visible;
-        margin-inline: 0;
-        padding: 0;
-    }
-
-    .nav__lien {
-        padding: 11px 14px;
-    }
-}
-</style>

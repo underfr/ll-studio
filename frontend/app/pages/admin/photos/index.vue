@@ -5,11 +5,15 @@ useHead({ title: 'Photos' })
 </script>
 
 <template>
-    <section class="jalon">
-        <p class="jalon__rubrique">Photos</p>
-        <h1 class="jalon__titre">Photographies</h1>
-        <p class="jalon__note">
-            Liste, ajout, modification et suppression à l'issue #27, envoi des fichiers à l'issue #29.
-        </p>
+    <section>
+        <AdminEnTetePage rubrique="Photos" titre="Photographies" />
+
+        <div class="alert" role="note">
+            <svg class="size-5 shrink-0 text-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path stroke-linecap="round" d="M12 8h.01M11 12h1v4h1" />
+            </svg>
+            <span>Écran en préparation : liste, ajout, modification et suppression à l'issue #27, envoi des fichiers à l'issue #29.</span>
+        </div>
     </section>
 </template>
