@@ -1,5 +1,7 @@
 <script setup lang="ts">
-useHead({ title: 'Administration' })
+definePageMeta({ layout: 'admin' })
+
+useHead({ title: 'Tableau de bord' })
 </script>
 
 <template>
@@ -7,7 +9,7 @@ useHead({ title: 'Administration' })
         <p class="jalon__rubrique">Administration</p>
         <h1 class="jalon__titre">Tableau de bord</h1>
         <p class="jalon__note">
-            Écran de connexion à l'issue #25, gabarit d'administration à l'issue #26.
+            Choisissez une rubrique dans le menu. L'écran de connexion arrive avec l'issue #25.
         </p>
     </section>
 </template>

@@ -148,7 +148,8 @@ button {
 
 /*
  * Gabarit d'attente des pages dont le contenu relève d'une issue ultérieure.
- * Ces règles disparaîtront au fil des issues #19 à #26.
+ * Ces règles disparaîtront avec les dernières pages d'attente : contact (#41)
+ * et rubriques du back-office (#27, #28, #42).
  */
 .jalon {
     max-width: var(--largeur-max);
